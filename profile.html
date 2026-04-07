@@ -101,21 +101,21 @@
 
     <div class="section-label">基本情報</div>
     <div class="field-row">
-      <div class="field"><label>名前（日本語）</label><input type="text" id="fNameJp" value="山本 裕子"></div>
-      <div class="field"><label>名前（ローマ字）</label><input type="text" id="fNameEn" value="Yuko Yamamoto"></div>
+      <div class="field"><label>名前（日本語）</label><input type="text" id="fNameJp" value="鹿野 花"></div>
+      <div class="field"><label>名前（ローマ字）</label><input type="text" id="fNameEn" value="Hana Shikano"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>生年月日</label><input type="text" id="fBirth" value="1998/5/12"></div>
+      <div class="field"><label>生年月日</label><input type="text" id="fBirth" value="2000/4/1"></div>
       <div class="field"><label>年齢</label><input type="text" id="fAge" value="26歳"></div>
     </div>
-    <div class="field"><label>出身地</label><input type="text" id="fFrom" value="北海道札幌市"></div>
+    <div class="field"><label>出身地</label><input type="text" id="fFrom" value="東京都世田谷区"></div>
     <div class="field-row">
-      <div class="field"><label>身長・体重</label><input type="text" id="fBody" value="165cm 48kg"></div>
-      <div class="field"><label>スリーサイズ</label><input type="text" id="fThree" value="B82 W61 H88"></div>
+      <div class="field"><label>身長・体重</label><input type="text" id="fBody" value="162cm 50kg"></div>
+      <div class="field"><label>スリーサイズ</label><input type="text" id="fThree" value="B80 W60 H86"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>靴サイズ</label><input type="text" id="fShoe" value="23.5cm"></div>
-      <div class="field"><label>資格</label><input type="text" id="fLicense" value="教員免許（小・中家庭科・高庭家庭科）、自動車免許（AT限定）"></div>
+      <div class="field"><label>靴サイズ</label><input type="text" id="fShoe" value="24.0cm"></div>
+      <div class="field"><label>資格</label><input type="text" id="fLicense" value="普通自動車免許（AT限定）"></div>
     </div>
 
     <div class="section-label">追加項目</div>
@@ -123,30 +123,27 @@
     <div class="btn-row"><button class="btn-s" onclick="addCustomField()">+ 項目追加</button></div>
 
     <div class="section-label">特技・趣味</div>
-    <div class="field"><label>特技</label><input type="text" id="fSkill" value="麻雀、スキー"></div>
-    <div class="field"><label>趣味</label><input type="text" id="fHobby" value="TVや映画を見る、ラジオを聞く、お笑いやバンドのライブに行く"></div>
+    <div class="field"><label>特技</label><input type="text" id="fSkill" value="ダンス、ピアノ"></div>
+    <div class="field"><label>趣味</label><input type="text" id="fHobby" value="カフェ巡り、映画鑑賞、読書"></div>
 
     <div class="section-label">SNS</div>
     <div id="snsFields"></div>
     <div class="btn-row"><button class="btn-s" onclick="addSns()">+ SNS追加</button></div>
 
     <div class="section-label">実績</div>
-    <div class="field"><textarea id="fRecord" rows="6">オーディションKYAM.PUS Webモデル
-アパレルブランドMun! Webモデル
-某プロ野球球団ユニフォームモデル
-きのこメーカー CM
-芸人AのYoutubeチャンネル
-アトリエ Webモデル
-ツアーグッズモデル
-旅行会社 大感謝フェア CM
-アパレル サイネージ広告</textarea></div>
+    <div class="field"><textarea id="fRecord" rows="6">○○ブランド Webモデル
+△△メーカー CM出演
+□□アパレル カタログモデル
+○○映画 エキストラ出演
+△△舞台 アンサンブル出演
+□□MV 出演</textarea></div>
 
     <div class="section-label">連絡先</div>
-    <div class="field"><label>事務所 / 所属</label><input type="text" id="fAgency" value="○○プロダクション"></div>
-    <div class="field"><label>担当者名</label><input type="text" id="fContactName" value="田中 太郎"></div>
+    <div class="field"><label>事務所 / 所属</label><input type="text" id="fAgency" value="サンプルプロダクション"></div>
+    <div class="field"><label>担当者名</label><input type="text" id="fContactName" value="佐藤 一郎"></div>
     <div class="field-row">
-      <div class="field"><label>メール</label><input type="text" id="fContactEmail" value="info@example.com"></div>
-      <div class="field"><label>電話</label><input type="text" id="fContactTel" value="03-1234-5678"></div>
+      <div class="field"><label>メール</label><input type="text" id="fContactEmail" value="sato@sample-pro.co.jp"></div>
+      <div class="field"><label>電話</label><input type="text" id="fContactTel" value="03-0000-0000"></div>
     </div>
 
     <div class="section-label">写真</div>
@@ -164,10 +161,10 @@ var photoSlots = [
 ];
 var snsEntries = [], customEntries = [];
 
-addSns('Instagram','@kyampus_audition','12,500');
-addSns('X','@kyampus_audition','8,200');
-addSns('TikTok','@kyampus_audition','5,100');
-addSns('YouTube','@kyampus_audition','3,800');
+addSns('Instagram','@hana_shikano','12,500');
+addSns('X','@hana_shikano','8,200');
+addSns('TikTok','@hana_shikano','5,100');
+addSns('YouTube','@hana_shikano','3,800');
 
 renderPhotoControls(); bindAll(); render();
 
