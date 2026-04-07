@@ -12,17 +12,17 @@
     .layout { display: block !important; }
     .preview-wrap { display: block !important; width: auto !important; padding: 0 !important; margin: 0 !important; background: #fff !important; overflow: visible !important; }
     .page { box-shadow: none !important; margin: 0 !important; }
+    .photo-slot-overlay { display: none !important; }
     .page-break { page-break-before: always; }
     @page { size: A4; margin: 0; }
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 13px; color: #222; background: #e8e8e8; }
+  body { font-family: "Hiragino Mincho ProN", "Yu Mincho", "游明朝", serif; font-size: 12px; color: #222; background: #e8e8e8; }
 
   .layout { display: flex; height: 100vh; }
   .preview-wrap { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 24px; background: #ddd; }
-  .input-panel { width: 400px; background: #fff; border-left: 1px solid #ccc; overflow-y: auto; padding: 20px 24px; flex-shrink: 0; }
+  .input-panel { width: 400px; background: #fff; border-left: 1px solid #ccc; overflow-y: auto; padding: 20px 24px; flex-shrink: 0; font-family: "Hiragino Sans", sans-serif; }
 
-  /* Input panel */
   .panel-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #222; }
   .section-label { font-size: 12px; font-weight: 700; color: #333; margin: 18px 0 8px; padding-top: 10px; border-top: 1px solid #eee; }
   .field { margin-bottom: 10px; }
@@ -41,57 +41,66 @@
   .btn-small { padding: 5px 12px; border: 1px solid #ccc; border-radius: 4px; background: #f5f5f5; font-size: 11px; cursor: pointer; font-family: inherit; }
   .btn-small:hover { background: #eee; }
   .btn-row { display: flex; gap: 6px; margin: 6px 0 12px; }
-  .photo-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-  .photo-preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
   .btn-print { width: 100%; padding: 12px; background: #222; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; font-family: inherit; }
   .btn-print:hover { background: #444; }
   input[type="file"] { display: none; }
 
+  .photo-slot-ctrl { margin-bottom: 10px; background: #f8f8f8; border: 1px solid #eee; border-radius: 6px; padding: 10px 12px; }
+  .photo-slot-ctrl .slot-title { font-size: 11px; font-weight: 700; color: #555; margin-bottom: 6px; }
+  .photo-slot-ctrl .slot-row { display: flex; gap: 8px; align-items: center; }
+  .photo-slot-ctrl .slot-thumb { width: 40px; height: 40px; background: #eee; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+  .photo-slot-ctrl .slot-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-slot-ctrl .slot-range { flex: 1; }
+  .photo-slot-ctrl .slot-range label { font-size: 10px; color: #888; }
+  .photo-slot-ctrl .slot-range input { width: 100%; }
+
   /* Page */
-  .page { width: 210mm; min-height: 297mm; background: #fff; padding: 16mm 18mm; flex-shrink: 0; position: relative; font-size: 11px; }
+  .page { width: 210mm; min-height: 297mm; background: #fff; padding: 16mm 18mm; flex-shrink: 0; position: relative; }
 
-  .p-header { display: flex; gap: 20px; margin-bottom: 16px; }
-  .p-header-left { flex: 1; }
-  .p-header-right { width: 160px; height: 200px; overflow: hidden; border-radius: 4px; flex-shrink: 0; }
-  .p-header-right img { width: 100%; height: 100%; object-fit: cover; }
-  .p-name-en { font-size: 11px; color: #666; margin-bottom: 2px; }
-  .p-name-jp { font-size: 26px; font-weight: 900; margin-bottom: 14px; letter-spacing: 2px; }
+  .p-top { display: flex; gap: 20px; margin-bottom: 16px; }
+  .p-top-left { flex: 1; }
+  .p-top-right { width: 170px; flex-shrink: 0; }
 
-  .p-info-table { width: 100%; margin-bottom: 4px; }
-  .p-info-table td { padding: 3px 0; font-size: 11px; vertical-align: top; }
-  .p-info-table td:first-child { font-weight: 700; white-space: nowrap; width: 100px; }
+  .p-name-en { font-size: 11px; color: #888; margin-bottom: 2px; font-family: "Helvetica Neue", Helvetica, sans-serif; }
+  .p-name-jp { font-size: 28px; font-weight: 900; margin-bottom: 16px; letter-spacing: 3px; }
+
+  .p-info-table { width: 100%; }
+  .p-info-table td { padding: 2px 0; font-size: 11.5px; vertical-align: top; line-height: 1.7; }
+  .p-info-table td.lbl { font-weight: 700; white-space: nowrap; width: 95px; }
+
+  .photo-slot { width: 100%; overflow: hidden; border-radius: 4px; background: #f5f5f5; position: relative; cursor: move; }
+  .photo-slot img { width: 100%; display: block; pointer-events: none; transform-origin: center center; }
+  .photo-slot-empty { display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 11px; font-family: sans-serif; }
+  .photo-slot-overlay { position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.5); color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 3px; pointer-events: none; font-family: sans-serif; }
 
   .p-section { margin-bottom: 14px; }
-  .p-section-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid #222; }
-  .p-section-body { font-size: 11px; line-height: 1.8; }
+  .p-section-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid #222; }
+  .p-section-body { font-size: 11.5px; line-height: 1.9; }
   .p-section-body ul { padding-left: 18px; }
-  .p-section-body li { margin-bottom: 2px; }
+  .p-section-body li { margin-bottom: 1px; }
 
-  .p-sns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .p-sns-item { display: flex; align-items: center; gap: 8px; font-size: 10px; }
-  .p-sns-qr { width: 40px; height: 40px; flex-shrink: 0; }
-  .p-sns-qr canvas, .p-sns-qr img { width: 40px !important; height: 40px !important; }
-  .p-sns-name { font-weight: 700; }
+  .p-sns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .p-sns-item { display: flex; align-items: center; gap: 8px; font-size: 10.5px; }
+  .p-sns-qr { width: 44px; height: 44px; flex-shrink: 0; }
+  .p-sns-qr canvas, .p-sns-qr img { width: 44px !important; height: 44px !important; }
+  .p-sns-name { font-weight: 700; font-size: 11px; }
   .p-sns-handle { color: #555; }
   .p-sns-followers { color: #888; font-size: 9px; }
 
-  .p-contact { background: #f8f8f8; border: 1px solid #eee; border-radius: 4px; padding: 10px 14px; margin-top: 14px; font-size: 10px; line-height: 1.8; }
-  .p-contact-title { font-weight: 700; margin-bottom: 4px; font-size: 11px; }
+  .p-contact { background: #f8f8f8; border: 1px solid #eee; border-radius: 4px; padding: 10px 14px; margin-top: 14px; font-size: 10.5px; line-height: 1.9; }
+  .p-contact-title { font-weight: 700; margin-bottom: 4px; font-size: 11.5px; }
 
-  .p-photos { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
-  .p-photos img { max-width: 48%; height: auto; border-radius: 4px; object-fit: cover; }
+  .p-bottom-photo { margin-top: 14px; }
 
   .page2 { padding-top: 20mm; }
-  .p-photos-page2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .p-photos-page2 img { width: 100%; border-radius: 4px; object-fit: cover; }
+  .p-photos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .p-photos-grid .photo-slot { border-radius: 6px; }
 </style>
 </head>
 <body>
 
 <div class="layout">
-  <div class="preview-wrap" id="previewWrap">
-    <!-- Pages rendered by JS -->
-  </div>
+  <div class="preview-wrap" id="previewWrap"></div>
 
   <div class="input-panel">
     <div class="panel-title">宣材プロフィール作成</div>
@@ -117,9 +126,7 @@
 
     <div class="section-label">追加項目</div>
     <div id="customFields"></div>
-    <div class="btn-row">
-      <button class="btn-small" onclick="addCustomField()">+ 項目追加</button>
-    </div>
+    <div class="btn-row"><button class="btn-small" onclick="addCustomField()">+ 項目追加</button></div>
 
     <div class="section-label">特技・趣味</div>
     <div class="field"><label>特技</label><input type="text" id="fSkill" placeholder="麻雀、スキー"></div>
@@ -127,12 +134,10 @@
 
     <div class="section-label">SNS</div>
     <div id="snsFields"></div>
-    <div class="btn-row">
-      <button class="btn-small" onclick="addSns()">+ SNS追加</button>
-    </div>
+    <div class="btn-row"><button class="btn-small" onclick="addSns()">+ SNS追加</button></div>
 
     <div class="section-label">実績</div>
-    <div class="field"><textarea id="fRecord" rows="6" placeholder="1行1項目で記入&#10;オーディションKYAM.PUS Webモデル&#10;アパレルブランドMun! Webモデル"></textarea></div>
+    <div class="field"><textarea id="fRecord" rows="5" placeholder="1行1項目で記入"></textarea></div>
 
     <div class="section-label">連絡先</div>
     <div class="field"><label>事務所 / 所属</label><input type="text" id="fAgency" placeholder="○○プロダクション"></div>
@@ -143,130 +148,144 @@
     </div>
 
     <div class="section-label">写真</div>
-    <button class="btn-small" onclick="document.getElementById('photoInput').click()">写真を選択</button>
-    <input type="file" id="photoInput" accept="image/*" multiple>
-    <div class="photo-preview" id="photoPreview"></div>
+    <div id="photoControls"></div>
 
     <button class="btn-print" onclick="window.print()">PDF出力</button>
   </div>
 </div>
 
 <script>
-var photos = [];
+// Photo slots: fixed positions
+var photoSlots = [
+  { id: 'main', label: 'メイン写真（右上）', src: null, scale: 1, offsetX: 0, offsetY: 0, height: 210 },
+  { id: 'sub', label: 'サブ写真（右下）', src: null, scale: 1, offsetX: 0, offsetY: 0, height: 180 }
+];
 var snsEntries = [];
 var customFieldEntries = [];
 
-// Init with 2 SNS rows
 addSns('Instagram', '', '');
 addSns('X', '', '');
 
-// Event listeners
-document.querySelectorAll('.input-panel input, .input-panel textarea, .input-panel select').forEach(function(el) {
-  el.addEventListener('input', render);
-});
+renderPhotoControls();
+bindInputs();
+render();
 
-document.getElementById('photoInput').addEventListener('change', function() {
-  var files = Array.from(this.files);
-  files.forEach(function(f) {
+function bindInputs() {
+  document.querySelectorAll('.input-panel input, .input-panel textarea').forEach(function(el) {
+    el.addEventListener('input', render);
+  });
+}
+
+// Photo controls
+function renderPhotoControls() {
+  var container = document.getElementById('photoControls');
+  container.innerHTML = '';
+  photoSlots.forEach(function(slot, idx) {
+    var div = document.createElement('div');
+    div.className = 'photo-slot-ctrl';
+    var thumbHtml = slot.src ? '<img src="' + slot.src + '">' : '';
+    div.innerHTML = '<div class="slot-title">' + slot.label + '</div>' +
+      '<div class="slot-row">' +
+      '<div class="slot-thumb">' + thumbHtml + '</div>' +
+      '<div style="flex:1;">' +
+      '<button class="btn-small" onclick="pickPhoto(' + idx + ')">画像選択</button>' +
+      (slot.src ? ' <button class="btn-small" onclick="clearPhoto(' + idx + ')">削除</button>' : '') +
+      '</div></div>' +
+      (slot.src ? '<div class="slot-range"><label>拡大率</label><input type="range" min="100" max="300" value="' + Math.round(slot.scale * 100) + '" oninput="setScale(' + idx + ', this.value)"></div>' : '');
+    container.appendChild(div);
+  });
+
+  // Extra photos button
+  var extraBtn = document.createElement('div');
+  extraBtn.style.marginTop = '8px';
+  extraBtn.innerHTML = '<button class="btn-small" onclick="addPhotoSlot()">+ 追加写真スロット（2ページ目）</button>';
+  container.appendChild(extraBtn);
+}
+
+function pickPhoto(idx) {
+  var input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.addEventListener('change', function() {
+    if (!this.files[0]) return;
     var reader = new FileReader();
     reader.onload = function(e) {
-      photos.push(e.target.result);
+      photoSlots[idx].src = e.target.result;
+      photoSlots[idx].scale = 1;
+      photoSlots[idx].offsetX = 0;
+      photoSlots[idx].offsetY = 0;
+      renderPhotoControls();
       render();
-      updatePhotoPreview();
     };
-    reader.readAsDataURL(f);
+    reader.readAsDataURL(this.files[0]);
   });
-  this.value = '';
-});
+  input.click();
+}
 
-function addSns(platform, handle, followers) {
-  snsEntries.push({ platform: platform || 'Instagram', handle: handle || '', followers: followers || '' });
-  renderSnsInputs();
+function clearPhoto(idx) {
+  photoSlots[idx].src = null;
+  renderPhotoControls();
   render();
 }
 
-function removeSns(idx) {
-  snsEntries.splice(idx, 1);
-  renderSnsInputs();
+function setScale(idx, val) {
+  photoSlots[idx].scale = val / 100;
   render();
 }
 
+function addPhotoSlot() {
+  var n = photoSlots.length + 1;
+  photoSlots.push({ id: 'extra' + n, label: '追加写真 ' + (n - 2), src: null, scale: 1, offsetX: 0, offsetY: 0, height: 240 });
+  renderPhotoControls();
+  render();
+}
+
+// SNS
+function addSns(p, h, f) {
+  snsEntries.push({ platform: p || 'Instagram', handle: h || '', followers: f || '' });
+  renderSnsInputs();
+  render();
+}
+function removeSns(idx) { snsEntries.splice(idx, 1); renderSnsInputs(); render(); }
 function renderSnsInputs() {
-  var container = document.getElementById('snsFields');
-  container.innerHTML = '';
-  snsEntries.forEach(function(entry, idx) {
-    var row = document.createElement('div');
-    row.className = 'sns-row';
-    row.innerHTML = '<select data-idx="' + idx + '" data-field="platform">' +
-      '<option' + (entry.platform === 'Instagram' ? ' selected' : '') + '>Instagram</option>' +
-      '<option' + (entry.platform === 'X' ? ' selected' : '') + '>X</option>' +
-      '<option' + (entry.platform === 'TikTok' ? ' selected' : '') + '>TikTok</option>' +
-      '<option' + (entry.platform === 'YouTube' ? ' selected' : '') + '>YouTube</option>' +
-      '<option' + (entry.platform === 'その他' ? ' selected' : '') + '>その他</option>' +
-      '</select>' +
-      '<input placeholder="@account" value="' + (entry.handle || '') + '" data-idx="' + idx + '" data-field="handle">' +
-      '<input class="followers" placeholder="フォロワー" value="' + (entry.followers || '') + '" data-idx="' + idx + '" data-field="followers">' +
-      '<button class="btn-small" onclick="removeSns(' + idx + ')">×</button>';
-    container.appendChild(row);
-    row.querySelectorAll('input, select').forEach(function(el) {
-      el.addEventListener('input', function() {
-        snsEntries[this.dataset.idx][this.dataset.field] = this.value;
-        render();
-      });
-    });
+  var c = document.getElementById('snsFields'); c.innerHTML = '';
+  snsEntries.forEach(function(e, i) {
+    var r = document.createElement('div'); r.className = 'sns-row';
+    r.innerHTML = '<select data-idx="'+i+'" data-field="platform"><option'+(e.platform==='Instagram'?' selected':'')+'>Instagram</option><option'+(e.platform==='X'?' selected':'')+'>X</option><option'+(e.platform==='TikTok'?' selected':'')+'>TikTok</option><option'+(e.platform==='YouTube'?' selected':'')+'>YouTube</option><option'+(e.platform==='その他'?' selected':'')+'>その他</option></select><input placeholder="@account" value="'+(e.handle||'')+'" data-idx="'+i+'" data-field="handle"><input class="followers" placeholder="フォロワー" value="'+(e.followers||'')+'" data-idx="'+i+'" data-field="followers"><button class="btn-small" onclick="removeSns('+i+')">×</button>';
+    c.appendChild(r);
+    r.querySelectorAll('input,select').forEach(function(el) { el.addEventListener('input', function() { snsEntries[this.dataset.idx][this.dataset.field]=this.value; render(); }); });
   });
 }
 
-function addCustomField() {
-  customFieldEntries.push({ label: '', value: '' });
-  renderCustomFields();
-}
-
-function removeCustomField(idx) {
-  customFieldEntries.splice(idx, 1);
-  renderCustomFields();
-  render();
-}
-
+// Custom fields
+function addCustomField() { customFieldEntries.push({label:'',value:''}); renderCustomFields(); }
+function removeCustomField(i) { customFieldEntries.splice(i,1); renderCustomFields(); render(); }
 function renderCustomFields() {
-  var container = document.getElementById('customFields');
-  container.innerHTML = '';
-  customFieldEntries.forEach(function(entry, idx) {
-    var row = document.createElement('div');
-    row.className = 'custom-field-row';
-    row.innerHTML = '<input placeholder="項目名" value="' + (entry.label || '') + '" data-idx="' + idx + '" data-field="label" style="width:80px;flex:none;">' +
-      '<input placeholder="内容" value="' + (entry.value || '') + '" data-idx="' + idx + '" data-field="value">' +
-      '<button class="btn-small" onclick="removeCustomField(' + idx + ')">×</button>';
-    container.appendChild(row);
-    row.querySelectorAll('input').forEach(function(el) {
-      el.addEventListener('input', function() {
-        customFieldEntries[this.dataset.idx][this.dataset.field] = this.value;
-        render();
-      });
-    });
+  var c = document.getElementById('customFields'); c.innerHTML = '';
+  customFieldEntries.forEach(function(e,i) {
+    var r = document.createElement('div'); r.className = 'custom-field-row';
+    r.innerHTML = '<input placeholder="項目名" value="'+(e.label||'')+'" data-idx="'+i+'" data-field="label" style="width:80px;flex:none;"><input placeholder="内容" value="'+(e.value||'')+'" data-idx="'+i+'" data-field="value"><button class="btn-small" onclick="removeCustomField('+i+')">×</button>';
+    c.appendChild(r);
+    r.querySelectorAll('input').forEach(function(el) { el.addEventListener('input', function() { customFieldEntries[this.dataset.idx][this.dataset.field]=this.value; render(); }); });
   });
 }
 
-function updatePhotoPreview() {
-  var container = document.getElementById('photoPreview');
-  container.innerHTML = '';
-  photos.forEach(function(src, idx) {
-    var img = document.createElement('img');
-    img.src = src;
-    img.style.cursor = 'pointer';
-    img.title = 'クリックで削除';
-    img.addEventListener('click', function() { photos.splice(idx, 1); updatePhotoPreview(); render(); });
-    container.appendChild(img);
-  });
-}
-
-function getSnsUrl(platform, handle) {
-  var h = handle.replace(/^@/, '');
-  if (platform === 'Instagram') return 'https://instagram.com/' + h;
-  if (platform === 'X') return 'https://x.com/' + h;
-  if (platform === 'TikTok') return 'https://tiktok.com/@' + h;
-  if (platform === 'YouTube') return 'https://youtube.com/@' + h;
+function getSnsUrl(p, h) {
+  var a = h.replace(/^@/,'');
+  if(p==='Instagram') return 'https://instagram.com/'+a;
+  if(p==='X') return 'https://x.com/'+a;
+  if(p==='TikTok') return 'https://tiktok.com/@'+a;
+  if(p==='YouTube') return 'https://youtube.com/@'+a;
   return '';
+}
+
+function val(id) { var el=document.getElementById(id); return el?el.value.trim():''; }
+
+function makePhotoSlotHtml(slot, height) {
+  if (!slot.src) return '<div class="photo-slot photo-slot-empty" style="height:'+height+'px;">クリックで画像選択</div>';
+  var s = slot.scale;
+  return '<div class="photo-slot" style="height:'+height+'px;" data-slot-id="'+slot.id+'">' +
+    '<img src="'+slot.src+'" style="transform: scale('+s+') translate('+slot.offsetX+'px,'+slot.offsetY+'px);">' +
+    '<div class="photo-slot-overlay">ドラッグで位置調整</div></div>';
 }
 
 function render() {
@@ -274,151 +293,141 @@ function render() {
   wrap.innerHTML = '';
 
   // Page 1
-  var page1 = document.createElement('div');
-  page1.className = 'page';
+  var page = document.createElement('div');
+  page.className = 'page';
 
-  var mainPhoto = photos.length > 0 ? photos[0] : '';
-  var subPhoto = photos.length > 1 ? photos[1] : '';
+  var mainSlot = photoSlots[0];
+  var subSlot = photoSlots[1];
 
-  // Header
-  var header = '<div class="p-header">';
-  header += '<div class="p-header-left">';
-  header += '<div class="p-name-en">' + val('fNameEn') + '</div>';
-  header += '<div class="p-name-jp">' + val('fNameJp') + '</div>';
+  // Top section
+  var html = '<div class="p-top"><div class="p-top-left">';
+  html += '<div class="p-name-en">' + val('fNameEn') + '</div>';
+  html += '<div class="p-name-jp">' + val('fNameJp') + '</div>';
+  html += '<table class="p-info-table">';
 
-  // Info table
-  header += '<table class="p-info-table">';
-  var infoFields = [
-    ['生年月日', val('fBirth')],
-    ['年齢', val('fAge')],
-    ['出身地', val('fFrom')],
-    ['身長・体重', val('fBody')],
-    ['スリーサイズ', val('fThree')],
-    ['靴サイズ', val('fShoe')],
-    ['資格', val('fLicense')]
+  var fields = [
+    ['生年月日', val('fBirth')], ['年齢', val('fAge')], ['出身地', val('fFrom')],
+    ['身長・体重', val('fBody')], ['スリーサイズ', val('fThree')],
+    ['靴サイズ', val('fShoe')], ['資格', val('fLicense')]
   ];
-  // Add custom fields
-  customFieldEntries.forEach(function(cf) {
-    if (cf.label || cf.value) infoFields.push([cf.label, cf.value]);
-  });
-  infoFields.forEach(function(f) {
-    if (f[1]) header += '<tr><td>' + f[0] + '　：</td><td>' + f[1] + '</td></tr>';
-  });
-  header += '</table>';
-  header += '</div>';
+  customFieldEntries.forEach(function(cf) { if(cf.label||cf.value) fields.push([cf.label, cf.value]); });
+  fields.forEach(function(f) { if(f[1]) html += '<tr><td class="lbl">'+f[0]+'　：</td><td>'+f[1]+'</td></tr>'; });
+  html += '</table></div>';
+  html += '<div class="p-top-right">' + makePhotoSlotHtml(mainSlot, 210) + '</div></div>';
 
-  // Main photo
-  if (mainPhoto) {
-    header += '<div class="p-header-right"><img src="' + mainPhoto + '"></div>';
-  }
-  header += '</div>';
-  page1.innerHTML = header;
-
-  // Skills & Hobbies
-  var skill = val('fSkill');
-  var hobby = val('fHobby');
+  // Skills
+  var skill = val('fSkill'), hobby = val('fHobby');
   if (skill || hobby) {
-    var sec = document.createElement('div');
-    sec.className = 'p-section';
-    var body = '';
-    if (skill) body += '＜特技＞' + skill + '<br>';
-    if (hobby) body += '＜趣味＞' + hobby;
-    sec.innerHTML = '<div class="p-section-title">特技・趣味</div><div class="p-section-body">' + body + '</div>';
-    page1.appendChild(sec);
+    html += '<div class="p-section"><div class="p-section-title">特技・趣味</div><div class="p-section-body">';
+    if(skill) html += '＜特技＞'+skill+'<br>';
+    if(hobby) html += '＜趣味＞'+hobby;
+    html += '</div></div>';
   }
 
   // SNS
-  var activeSns = snsEntries.filter(function(s) { return s.handle; });
+  var activeSns = snsEntries.filter(function(s){return s.handle;});
   if (activeSns.length) {
-    var snsSec = document.createElement('div');
-    snsSec.className = 'p-section';
-    var snsHtml = '<div class="p-section-title">SNS</div><div class="p-sns-grid">';
-    activeSns.forEach(function(s, idx) {
-      var url = getSnsUrl(s.platform, s.handle);
-      snsHtml += '<div class="p-sns-item">';
-      snsHtml += '<div class="p-sns-qr" id="qr_' + idx + '"></div>';
-      snsHtml += '<div><div class="p-sns-name">' + s.platform + '</div>';
-      snsHtml += '<div class="p-sns-handle">' + s.handle + '</div>';
-      if (s.followers) snsHtml += '<div class="p-sns-followers">' + s.followers + ' followers</div>';
-      snsHtml += '</div></div>';
+    html += '<div class="p-section"><div class="p-section-title">SNS</div><div class="p-sns-grid">';
+    activeSns.forEach(function(s,i) {
+      html += '<div class="p-sns-item"><div class="p-sns-qr" id="qr_'+i+'"></div><div>';
+      html += '<div class="p-sns-name">'+s.platform+'</div>';
+      html += '<div class="p-sns-handle">'+s.handle+'</div>';
+      if(s.followers) html += '<div class="p-sns-followers">'+s.followers+' followers</div>';
+      html += '</div></div>';
     });
-    snsHtml += '</div>';
-    snsSec.innerHTML = snsHtml;
-    page1.appendChild(snsSec);
-
-    // Generate QR codes after DOM insert
-    setTimeout(function() {
-      activeSns.forEach(function(s, idx) {
-        var url = getSnsUrl(s.platform, s.handle);
-        var el = document.getElementById('qr_' + idx);
-        if (el && url) {
-          el.innerHTML = '';
-          new QRCode(el, { text: url, width: 40, height: 40, colorDark: '#222', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.L });
-        }
-      });
-    }, 50);
+    html += '</div></div>';
   }
 
   // Record
   var record = val('fRecord');
   if (record) {
-    var recSec = document.createElement('div');
-    recSec.className = 'p-section';
-    var items = record.split('\n').filter(function(l) { return l.trim(); });
-    var recHtml = '<div class="p-section-title">実績</div><div class="p-section-body"><ul>';
-    items.forEach(function(item) { recHtml += '<li>' + item.trim() + '</li>'; });
-    recHtml += '</ul></div>';
-    recSec.innerHTML = recHtml;
-    page1.appendChild(recSec);
+    var items = record.split('\n').filter(function(l){return l.trim();});
+    html += '<div class="p-section"><div class="p-section-title">実績</div><div class="p-section-body"><ul>';
+    items.forEach(function(item){html += '<li>'+item.trim()+'</li>';});
+    html += '</ul></div></div>';
   }
 
-  // Sub photo inline (if 2 photos, show 2nd at bottom right)
-  if (subPhoto && photos.length <= 2) {
-    var photoDiv = document.createElement('div');
-    photoDiv.style.cssText = 'text-align: right; margin-top: 12px;';
-    photoDiv.innerHTML = '<img src="' + subPhoto + '" style="width: 160px; border-radius: 4px; object-fit: cover;">';
-    page1.appendChild(photoDiv);
-  }
-
+  // Sub photo + Contact side by side
+  html += '<div style="display:flex;gap:16px;margin-top:12px;">';
   // Contact
-  var agency = val('fAgency');
-  var cName = val('fContactName');
-  var cEmail = val('fContactEmail');
-  var cTel = val('fContactTel');
-  if (agency || cName || cEmail || cTel) {
-    var contactDiv = document.createElement('div');
-    contactDiv.className = 'p-contact';
-    var cHtml = '<div class="p-contact-title">連絡先</div>';
-    if (agency) cHtml += '所属：' + agency + '<br>';
-    if (cName) cHtml += '担当：' + cName + '<br>';
-    if (cEmail) cHtml += 'Email：' + cEmail + '<br>';
-    if (cTel) cHtml += 'TEL：' + cTel;
-    contactDiv.innerHTML = cHtml;
-    page1.appendChild(contactDiv);
+  var agency=val('fAgency'),cName=val('fContactName'),cEmail=val('fContactEmail'),cTel=val('fContactTel');
+  if(agency||cName||cEmail||cTel) {
+    html += '<div class="p-contact" style="flex:1;margin-top:0;">';
+    html += '<div class="p-contact-title">連絡先</div>';
+    if(agency)html+='所属：'+agency+'<br>';
+    if(cName)html+='担当：'+cName+'<br>';
+    if(cEmail)html+='Email：'+cEmail+'<br>';
+    if(cTel)html+='TEL：'+cTel;
+    html += '</div>';
   }
+  // Sub photo
+  html += '<div style="width:170px;flex-shrink:0;">' + makePhotoSlotHtml(subSlot, 180) + '</div>';
+  html += '</div>';
 
-  wrap.appendChild(page1);
+  page.innerHTML = html;
+  wrap.appendChild(page);
 
-  // Page 2: Extra photos (if more than 2)
-  if (photos.length > 2) {
+  // QR codes
+  setTimeout(function() {
+    activeSns.forEach(function(s,i) {
+      var url = getSnsUrl(s.platform, s.handle);
+      var el = document.getElementById('qr_'+i);
+      if(el&&url) { el.innerHTML=''; new QRCode(el,{text:url,width:44,height:44,colorDark:'#222',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.L}); }
+    });
+  }, 50);
+
+  // Page 2: Extra photos
+  var extras = photoSlots.slice(2).filter(function(s){return s.src;});
+  if (extras.length) {
     var page2 = document.createElement('div');
     page2.className = 'page page2 page-break';
-    var photosHtml = '<div class="p-section-title" style="margin-bottom:16px;">Photos</div><div class="p-photos-page2">';
-    for (var i = 2; i < photos.length; i++) {
-      photosHtml += '<img src="' + photos[i] + '">';
-    }
-    photosHtml += '</div>';
-    page2.innerHTML = photosHtml;
+    var p2html = '<div class="p-section-title" style="margin-bottom:16px;">Photos</div><div class="p-photos-grid">';
+    extras.forEach(function(s) { p2html += makePhotoSlotHtml(s, 280); });
+    p2html += '</div>';
+    page2.innerHTML = p2html;
     wrap.appendChild(page2);
   }
+
+  // Setup drag on photo slots
+  setupPhotoDrag();
 }
 
-function val(id) {
-  var el = document.getElementById(id);
-  return el ? el.value.trim() : '';
-}
+function setupPhotoDrag() {
+  document.querySelectorAll('.photo-slot').forEach(function(slot) {
+    if (slot.classList.contains('photo-slot-empty')) return;
+    var slotId = slot.dataset.slotId;
+    var data = photoSlots.find(function(s){return s.id===slotId;});
+    if (!data) return;
 
-render();
+    var isDragging = false, startX, startY, origOX, origOY;
+    slot.addEventListener('mousedown', function(e) {
+      e.preventDefault(); isDragging = true;
+      startX = e.clientX; startY = e.clientY;
+      origOX = data.offsetX; origOY = data.offsetY;
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (!isDragging) return;
+      var dx = (e.clientX - startX) / data.scale;
+      var dy = (e.clientY - startY) / data.scale;
+      data.offsetX = origOX + dx;
+      data.offsetY = origOY + dy;
+      var img = slot.querySelector('img');
+      if (img) img.style.transform = 'scale('+data.scale+') translate('+data.offsetX+'px,'+data.offsetY+'px)';
+    });
+    document.addEventListener('mouseup', function() { isDragging = false; });
+
+    // Mouse wheel for zoom
+    slot.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      var delta = e.deltaY > 0 ? -0.05 : 0.05;
+      data.scale = Math.max(0.5, Math.min(3, data.scale + delta));
+      var img = slot.querySelector('img');
+      if (img) img.style.transform = 'scale('+data.scale+') translate('+data.offsetX+'px,'+data.offsetY+'px)';
+      // Update slider in controls
+      renderPhotoControls();
+    });
+  });
+}
 </script>
 </body>
 </html>
