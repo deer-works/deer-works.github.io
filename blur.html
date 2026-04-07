@@ -55,6 +55,12 @@
   .badge-ok { color: #7fe08c; font-weight: 700; font-size: 10px; }
   .badge-ng { color: #e07f7f; font-weight: 700; font-size: 10px; }
   .badge-ng-tag { position: absolute; top: 8px; right: 8px; background: rgba(224,80,80,0.9); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+  .exclude-check { position: absolute; top: 8px; left: 8px; z-index: 2; }
+  .exclude-check input { width: 18px; height: 18px; cursor: pointer; accent-color: #e07f7f; }
+  .image-card.excluded { opacity: 0.35; }
+  .image-card.excluded img { filter: grayscale(1); }
+  .download-bar { display: none; justify-content: center; gap: 12px; align-items: center; margin-bottom: 20px; padding: 12px; background: #252525; border-radius: 8px; max-width: 600px; margin-left: auto; margin-right: auto; border: 1px solid #333; }
+  .download-count { font-size: 13px; color: #7fe08c; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -78,7 +84,10 @@
 
 <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
-<div class="actions">
+<div class="download-bar" id="downloadBar">
+  <span class="download-count" id="downloadCount"></span>
+  <button class="btn btn-primary" id="btnDownload">一括ダウンロード</button>
+  <button class="btn btn-secondary" id="btnExcludeAllNg">NG全除外</button>
   <button class="btn btn-secondary" id="btnClear" disabled>全てクリア</button>
 </div>
 
@@ -116,6 +125,27 @@ document.getElementById('btnClear').addEventListener('click', function() {
   document.getElementById('summary').textContent = '';
   document.getElementById('filterTabs').style.display = 'none';
   document.getElementById('progressBar').style.display = 'none';
+  document.getElementById('downloadBar').style.display = 'none';
+});
+
+document.getElementById('btnDownload').addEventListener('click', function() {
+  var threshold = getThreshold();
+  entries.forEach(function(e) {
+    if (!e.excluded && e.file) {
+      var a = document.createElement('a');
+      a.href = e.thumbFullUrl || URL.createObjectURL(e.file);
+      a.download = e.file.name;
+      a.click();
+    }
+  });
+});
+
+document.getElementById('btnExcludeAllNg').addEventListener('click', function() {
+  var threshold = getThreshold();
+  entries.forEach(function(e) {
+    if (e.score < threshold) e.excluded = true;
+  });
+  renderGrid();
 });
 
 document.getElementById('filterTabs').addEventListener('click', function(e) {
@@ -467,11 +497,20 @@ function updateSummary() {
     entries.length + '枚中　<span class="ok-count">OK: ' + okCount + '枚</span>　<span class="ng-count">NG: ' + ngCount + '枚</span>';
 }
 
+function updateDownloadBar() {
+  var bar = document.getElementById('downloadBar');
+  if (!entries.length) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  var dlCount = entries.filter(function(e) { return !e.excluded; }).length;
+  document.getElementById('downloadCount').textContent = dlCount + '枚ダウンロード対象';
+}
+
 function renderGrid() {
   grid.innerHTML = '';
   document.getElementById('btnClear').disabled = entries.length === 0;
   var threshold = getThreshold();
   updateSummary();
+  updateDownloadBar();
 
   entries.forEach(function(entry) {
     var isNg = entry.score < threshold;
@@ -479,7 +518,22 @@ function renderGrid() {
     if (currentFilter === 'ok' && isNg) return;
 
     var card = document.createElement('div');
-    card.className = 'image-card ' + (isNg ? 'ng' : 'ok');
+    card.className = 'image-card ' + (isNg ? 'ng' : 'ok') + (entry.excluded ? ' excluded' : '');
+
+    // Exclude checkbox
+    var checkWrap = document.createElement('label');
+    checkWrap.className = 'exclude-check';
+    var checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = !!entry.excluded;
+    checkbox.title = '除外する';
+    checkbox.addEventListener('change', function() {
+      entry.excluded = this.checked;
+      card.classList.toggle('excluded', this.checked);
+      updateDownloadBar();
+    });
+    checkWrap.appendChild(checkbox);
+    card.appendChild(checkWrap);
 
     var img = document.createElement('img');
     img.src = entry.thumbUrl;
