@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宣材プロフィール作成</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  @media print {
+    html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+    .input-panel { display: none !important; }
+    .layout { display: block !important; }
+    .preview-wrap { display: block !important; width: auto !important; padding: 0 !important; margin: 0 !important; background: #fff !important; overflow: visible !important; }
+    .page { box-shadow: none !important; margin: 0 !important; }
+    .page-break { page-break-before: always; }
+    @page { size: A4; margin: 0; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 13px; color: #222; background: #e8e8e8; }
+
+  .layout { display: flex; height: 100vh; }
+  .preview-wrap { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 24px; background: #ddd; }
+  .input-panel { width: 400px; background: #fff; border-left: 1px solid #ccc; overflow-y: auto; padding: 20px 24px; flex-shrink: 0; }
+
+  /* Input panel */
+  .panel-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #222; }
+  .section-label { font-size: 12px; font-weight: 700; color: #333; margin: 18px 0 8px; padding-top: 10px; border-top: 1px solid #eee; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; font-weight: 600; }
+  .field input, .field textarea, .field select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; font-family: inherit; }
+  .field input:focus, .field textarea:focus { outline: none; border-color: #888; }
+  .field textarea { resize: vertical; min-height: 50px; }
+  .field-row { display: flex; gap: 8px; }
+  .field-row .field { flex: 1; }
+  .custom-field-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+  .custom-field-row input { flex: 1; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+  .sns-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+  .sns-row select { width: 90px; padding: 6px; font-size: 12px; }
+  .sns-row input { flex: 1; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+  .sns-row input.followers { width: 70px; flex: none; }
+  .btn-small { padding: 5px 12px; border: 1px solid #ccc; border-radius: 4px; background: #f5f5f5; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .btn-small:hover { background: #eee; }
+  .btn-row { display: flex; gap: 6px; margin: 6px 0 12px; }
+  .photo-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .photo-preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
+  .btn-print { width: 100%; padding: 12px; background: #222; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; font-family: inherit; }
+  .btn-print:hover { background: #444; }
+  input[type="file"] { display: none; }
+
+  /* Page */
+  .page { width: 210mm; min-height: 297mm; background: #fff; padding: 16mm 18mm; flex-shrink: 0; position: relative; font-size: 11px; }
+
+  .p-header { display: flex; gap: 20px; margin-bottom: 16px; }
+  .p-header-left { flex: 1; }
+  .p-header-right { width: 160px; height: 200px; overflow: hidden; border-radius: 4px; flex-shrink: 0; }
+  .p-header-right img { width: 100%; height: 100%; object-fit: cover; }
+  .p-name-en { font-size: 11px; color: #666; margin-bottom: 2px; }
+  .p-name-jp { font-size: 26px; font-weight: 900; margin-bottom: 14px; letter-spacing: 2px; }
+
+  .p-info-table { width: 100%; margin-bottom: 4px; }
+  .p-info-table td { padding: 3px 0; font-size: 11px; vertical-align: top; }
+  .p-info-table td:first-child { font-weight: 700; white-space: nowrap; width: 100px; }
+
+  .p-section { margin-bottom: 14px; }
+  .p-section-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid #222; }
+  .p-section-body { font-size: 11px; line-height: 1.8; }
+  .p-section-body ul { padding-left: 18px; }
+  .p-section-body li { margin-bottom: 2px; }
+
+  .p-sns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .p-sns-item { display: flex; align-items: center; gap: 8px; font-size: 10px; }
+  .p-sns-qr { width: 40px; height: 40px; flex-shrink: 0; }
+  .p-sns-qr canvas, .p-sns-qr img { width: 40px !important; height: 40px !important; }
+  .p-sns-name { font-weight: 700; }
+  .p-sns-handle { color: #555; }
+  .p-sns-followers { color: #888; font-size: 9px; }
+
+  .p-contact { background: #f8f8f8; border: 1px solid #eee; border-radius: 4px; padding: 10px 14px; margin-top: 14px; font-size: 10px; line-height: 1.8; }
+  .p-contact-title { font-weight: 700; margin-bottom: 4px; font-size: 11px; }
+
+  .p-photos { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
+  .p-photos img { max-width: 48%; height: auto; border-radius: 4px; object-fit: cover; }
+
+  .page2 { padding-top: 20mm; }
+  .p-photos-page2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .p-photos-page2 img { width: 100%; border-radius: 4px; object-fit: cover; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="preview-wrap" id="previewWrap">
+    <!-- Pages rendered by JS -->
+  </div>
+
+  <div class="input-panel">
+    <div class="panel-title">宣材プロフィール作成</div>
+
+    <div class="section-label">基本情報</div>
+    <div class="field-row">
+      <div class="field"><label>名前（日本語）</label><input type="text" id="fNameJp" placeholder="山本 裕子"></div>
+      <div class="field"><label>名前（ローマ字）</label><input type="text" id="fNameEn" placeholder="Yuko Yamamoto"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>生年月日</label><input type="text" id="fBirth" placeholder="1998/5/12"></div>
+      <div class="field"><label>年齢</label><input type="text" id="fAge" placeholder="26歳"></div>
+    </div>
+    <div class="field"><label>出身地</label><input type="text" id="fFrom" placeholder="北海道札幌市"></div>
+    <div class="field-row">
+      <div class="field"><label>身長・体重</label><input type="text" id="fBody" placeholder="165cm 48kg"></div>
+      <div class="field"><label>スリーサイズ</label><input type="text" id="fThree" placeholder="B82 W61 H88"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>靴サイズ</label><input type="text" id="fShoe" placeholder="23.5cm"></div>
+      <div class="field"><label>資格</label><input type="text" id="fLicense" placeholder="教員免許、自動車免許"></div>
+    </div>
+
+    <div class="section-label">追加項目</div>
+    <div id="customFields"></div>
+    <div class="btn-row">
+      <button class="btn-small" onclick="addCustomField()">+ 項目追加</button>
+    </div>
+
+    <div class="section-label">特技・趣味</div>
+    <div class="field"><label>特技</label><input type="text" id="fSkill" placeholder="麻雀、スキー"></div>
+    <div class="field"><label>趣味</label><input type="text" id="fHobby" placeholder="TVや映画を見る、ラジオを聞く"></div>
+
+    <div class="section-label">SNS</div>
+    <div id="snsFields"></div>
+    <div class="btn-row">
+      <button class="btn-small" onclick="addSns()">+ SNS追加</button>
+    </div>
+
+    <div class="section-label">実績</div>
+    <div class="field"><textarea id="fRecord" rows="6" placeholder="1行1項目で記入&#10;オーディションKYAM.PUS Webモデル&#10;アパレルブランドMun! Webモデル"></textarea></div>
+
+    <div class="section-label">連絡先</div>
+    <div class="field"><label>事務所 / 所属</label><input type="text" id="fAgency" placeholder="○○プロダクション"></div>
+    <div class="field"><label>担当者名</label><input type="text" id="fContactName" placeholder="田中 太郎"></div>
+    <div class="field-row">
+      <div class="field"><label>メール</label><input type="text" id="fContactEmail" placeholder="info@example.com"></div>
+      <div class="field"><label>電話</label><input type="text" id="fContactTel" placeholder="03-1234-5678"></div>
+    </div>
+
+    <div class="section-label">写真</div>
+    <button class="btn-small" onclick="document.getElementById('photoInput').click()">写真を選択</button>
+    <input type="file" id="photoInput" accept="image/*" multiple>
+    <div class="photo-preview" id="photoPreview"></div>
+
+    <button class="btn-print" onclick="window.print()">PDF出力</button>
+  </div>
+</div>
+
+<script>
+var photos = [];
+var snsEntries = [];
+var customFieldEntries = [];
+
+// Init with 2 SNS rows
+addSns('Instagram', '', '');
+addSns('X', '', '');
+
+// Event listeners
+document.querySelectorAll('.input-panel input, .input-panel textarea, .input-panel select').forEach(function(el) {
+  el.addEventListener('input', render);
+});
+
+document.getElementById('photoInput').addEventListener('change', function() {
+  var files = Array.from(this.files);
+  files.forEach(function(f) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      photos.push(e.target.result);
+      render();
+      updatePhotoPreview();
+    };
+    reader.readAsDataURL(f);
+  });
+  this.value = '';
+});
+
+function addSns(platform, handle, followers) {
+  snsEntries.push({ platform: platform || 'Instagram', handle: handle || '', followers: followers || '' });
+  renderSnsInputs();
+  render();
+}
+
+function removeSns(idx) {
+  snsEntries.splice(idx, 1);
+  renderSnsInputs();
+  render();
+}
+
+function renderSnsInputs() {
+  var container = document.getElementById('snsFields');
+  container.innerHTML = '';
+  snsEntries.forEach(function(entry, idx) {
+    var row = document.createElement('div');
+    row.className = 'sns-row';
+    row.innerHTML = '<select data-idx="' + idx + '" data-field="platform">' +
+      '<option' + (entry.platform === 'Instagram' ? ' selected' : '') + '>Instagram</option>' +
+      '<option' + (entry.platform === 'X' ? ' selected' : '') + '>X</option>' +
+      '<option' + (entry.platform === 'TikTok' ? ' selected' : '') + '>TikTok</option>' +
+      '<option' + (entry.platform === 'YouTube' ? ' selected' : '') + '>YouTube</option>' +
+      '<option' + (entry.platform === 'その他' ? ' selected' : '') + '>その他</option>' +
+      '</select>' +
+      '<input placeholder="@account" value="' + (entry.handle || '') + '" data-idx="' + idx + '" data-field="handle">' +
+      '<input class="followers" placeholder="フォロワー" value="' + (entry.followers || '') + '" data-idx="' + idx + '" data-field="followers">' +
+      '<button class="btn-small" onclick="removeSns(' + idx + ')">×</button>';
+    container.appendChild(row);
+    row.querySelectorAll('input, select').forEach(function(el) {
+      el.addEventListener('input', function() {
+        snsEntries[this.dataset.idx][this.dataset.field] = this.value;
+        render();
+      });
+    });
+  });
+}
+
+function addCustomField() {
+  customFieldEntries.push({ label: '', value: '' });
+  renderCustomFields();
+}
+
+function removeCustomField(idx) {
+  customFieldEntries.splice(idx, 1);
+  renderCustomFields();
+  render();
+}
+
+function renderCustomFields() {
+  var container = document.getElementById('customFields');
+  container.innerHTML = '';
+  customFieldEntries.forEach(function(entry, idx) {
+    var row = document.createElement('div');
+    row.className = 'custom-field-row';
+    row.innerHTML = '<input placeholder="項目名" value="' + (entry.label || '') + '" data-idx="' + idx + '" data-field="label" style="width:80px;flex:none;">' +
+      '<input placeholder="内容" value="' + (entry.value || '') + '" data-idx="' + idx + '" data-field="value">' +
+      '<button class="btn-small" onclick="removeCustomField(' + idx + ')">×</button>';
+    container.appendChild(row);
+    row.querySelectorAll('input').forEach(function(el) {
+      el.addEventListener('input', function() {
+        customFieldEntries[this.dataset.idx][this.dataset.field] = this.value;
+        render();
+      });
+    });
+  });
+}
+
+function updatePhotoPreview() {
+  var container = document.getElementById('photoPreview');
+  container.innerHTML = '';
+  photos.forEach(function(src, idx) {
+    var img = document.createElement('img');
+    img.src = src;
+    img.style.cursor = 'pointer';
+    img.title = 'クリックで削除';
+    img.addEventListener('click', function() { photos.splice(idx, 1); updatePhotoPreview(); render(); });
+    container.appendChild(img);
+  });
+}
+
+function getSnsUrl(platform, handle) {
+  var h = handle.replace(/^@/, '');
+  if (platform === 'Instagram') return 'https://instagram.com/' + h;
+  if (platform === 'X') return 'https://x.com/' + h;
+  if (platform === 'TikTok') return 'https://tiktok.com/@' + h;
+  if (platform === 'YouTube') return 'https://youtube.com/@' + h;
+  return '';
+}
+
+function render() {
+  var wrap = document.getElementById('previewWrap');
+  wrap.innerHTML = '';
+
+  // Page 1
+  var page1 = document.createElement('div');
+  page1.className = 'page';
+
+  var mainPhoto = photos.length > 0 ? photos[0] : '';
+  var subPhoto = photos.length > 1 ? photos[1] : '';
+
+  // Header
+  var header = '<div class="p-header">';
+  header += '<div class="p-header-left">';
+  header += '<div class="p-name-en">' + val('fNameEn') + '</div>';
+  header += '<div class="p-name-jp">' + val('fNameJp') + '</div>';
+
+  // Info table
+  header += '<table class="p-info-table">';
+  var infoFields = [
+    ['生年月日', val('fBirth')],
+    ['年齢', val('fAge')],
+    ['出身地', val('fFrom')],
+    ['身長・体重', val('fBody')],
+    ['スリーサイズ', val('fThree')],
+    ['靴サイズ', val('fShoe')],
+    ['資格', val('fLicense')]
+  ];
+  // Add custom fields
+  customFieldEntries.forEach(function(cf) {
+    if (cf.label || cf.value) infoFields.push([cf.label, cf.value]);
+  });
+  infoFields.forEach(function(f) {
+    if (f[1]) header += '<tr><td>' + f[0] + '　：</td><td>' + f[1] + '</td></tr>';
+  });
+  header += '</table>';
+  header += '</div>';
+
+  // Main photo
+  if (mainPhoto) {
+    header += '<div class="p-header-right"><img src="' + mainPhoto + '"></div>';
+  }
+  header += '</div>';
+  page1.innerHTML = header;
+
+  // Skills & Hobbies
+  var skill = val('fSkill');
+  var hobby = val('fHobby');
+  if (skill || hobby) {
+    var sec = document.createElement('div');
+    sec.className = 'p-section';
+    var body = '';
+    if (skill) body += '＜特技＞' + skill + '<br>';
+    if (hobby) body += '＜趣味＞' + hobby;
+    sec.innerHTML = '<div class="p-section-title">特技・趣味</div><div class="p-section-body">' + body + '</div>';
+    page1.appendChild(sec);
+  }
+
+  // SNS
+  var activeSns = snsEntries.filter(function(s) { return s.handle; });
+  if (activeSns.length) {
+    var snsSec = document.createElement('div');
+    snsSec.className = 'p-section';
+    var snsHtml = '<div class="p-section-title">SNS</div><div class="p-sns-grid">';
+    activeSns.forEach(function(s, idx) {
+      var url = getSnsUrl(s.platform, s.handle);
+      snsHtml += '<div class="p-sns-item">';
+      snsHtml += '<div class="p-sns-qr" id="qr_' + idx + '"></div>';
+      snsHtml += '<div><div class="p-sns-name">' + s.platform + '</div>';
+      snsHtml += '<div class="p-sns-handle">' + s.handle + '</div>';
+      if (s.followers) snsHtml += '<div class="p-sns-followers">' + s.followers + ' followers</div>';
+      snsHtml += '</div></div>';
+    });
+    snsHtml += '</div>';
+    snsSec.innerHTML = snsHtml;
+    page1.appendChild(snsSec);
+
+    // Generate QR codes after DOM insert
+    setTimeout(function() {
+      activeSns.forEach(function(s, idx) {
+        var url = getSnsUrl(s.platform, s.handle);
+        var el = document.getElementById('qr_' + idx);
+        if (el && url) {
+          el.innerHTML = '';
+          new QRCode(el, { text: url, width: 40, height: 40, colorDark: '#222', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.L });
+        }
+      });
+    }, 50);
+  }
+
+  // Record
+  var record = val('fRecord');
+  if (record) {
+    var recSec = document.createElement('div');
+    recSec.className = 'p-section';
+    var items = record.split('\n').filter(function(l) { return l.trim(); });
+    var recHtml = '<div class="p-section-title">実績</div><div class="p-section-body"><ul>';
+    items.forEach(function(item) { recHtml += '<li>' + item.trim() + '</li>'; });
+    recHtml += '</ul></div>';
+    recSec.innerHTML = recHtml;
+    page1.appendChild(recSec);
+  }
+
+  // Sub photo inline (if 2 photos, show 2nd at bottom right)
+  if (subPhoto && photos.length <= 2) {
+    var photoDiv = document.createElement('div');
+    photoDiv.style.cssText = 'text-align: right; margin-top: 12px;';
+    photoDiv.innerHTML = '<img src="' + subPhoto + '" style="width: 160px; border-radius: 4px; object-fit: cover;">';
+    page1.appendChild(photoDiv);
+  }
+
+  // Contact
+  var agency = val('fAgency');
+  var cName = val('fContactName');
+  var cEmail = val('fContactEmail');
+  var cTel = val('fContactTel');
+  if (agency || cName || cEmail || cTel) {
+    var contactDiv = document.createElement('div');
+    contactDiv.className = 'p-contact';
+    var cHtml = '<div class="p-contact-title">連絡先</div>';
+    if (agency) cHtml += '所属：' + agency + '<br>';
+    if (cName) cHtml += '担当：' + cName + '<br>';
+    if (cEmail) cHtml += 'Email：' + cEmail + '<br>';
+    if (cTel) cHtml += 'TEL：' + cTel;
+    contactDiv.innerHTML = cHtml;
+    page1.appendChild(contactDiv);
+  }
+
+  wrap.appendChild(page1);
+
+  // Page 2: Extra photos (if more than 2)
+  if (photos.length > 2) {
+    var page2 = document.createElement('div');
+    page2.className = 'page page2 page-break';
+    var photosHtml = '<div class="p-section-title" style="margin-bottom:16px;">Photos</div><div class="p-photos-page2">';
+    for (var i = 2; i < photos.length; i++) {
+      photosHtml += '<img src="' + photos[i] + '">';
+    }
+    photosHtml += '</div>';
+    page2.innerHTML = photosHtml;
+    wrap.appendChild(page2);
+  }
+}
+
+function val(id) {
+  var el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+render();
+</script>
+</body>
+</html>
