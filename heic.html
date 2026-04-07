@@ -38,6 +38,7 @@
   .lib-status { text-align: center; font-size: 11px; margin-bottom: 16px; }
 </style>
 <script src="https://unpkg.com/libheif-js@1.18.2/libheif-wasm/libheif-bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
 
@@ -132,7 +133,26 @@ document.getElementById('btnClear').addEventListener('click', function() {
   document.getElementById('progressBar').style.display = 'none';
 });
 document.getElementById('btnDownloadAll').addEventListener('click', function() {
-  entries.forEach(function(e) { if (e.blob) downloadBlob(e.blob, e.jpgName); });
+  var targets = entries.filter(function(e) { return e.blob && e.status === 'done'; });
+  if (!targets.length) return;
+
+  var btn = document.getElementById('btnDownloadAll');
+  btn.disabled = true;
+  btn.textContent = 'ZIP作成中...';
+
+  var zip = new JSZip();
+  targets.forEach(function(e) {
+    zip.file(e.jpgName, e.blob);
+  });
+
+  zip.generateAsync({ type: 'blob' }).then(function(blob) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'converted_images.zip';
+    a.click();
+    btn.disabled = false;
+    btn.textContent = '一括ダウンロード';
+  });
 });
 
 function isHeic(file) {

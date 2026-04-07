@@ -141,7 +141,11 @@ document.getElementById('btnDownload').addEventListener('click', function() {
   var loaded = 0;
 
   targets.forEach(function(e) {
-    zip.file(e.file.name, e.file);
+    if (e.jpgBlob) {
+      zip.file(e.file.name.replace(/\.heic$|\.heif$/i, '.jpg'), e.jpgBlob);
+    } else {
+      zip.file(e.file.name, e.file);
+    }
   });
 
   zip.generateAsync({ type: 'blob' }).then(function(blob) {
@@ -213,9 +217,11 @@ function convertHeicToImageElement(file) {
         var imgData = cx.createImageData(w, h);
         image.display(imgData, function(d) {
           cx.putImageData(d || imgData, 0, 0);
-          var img = new Image();
-          img.onload = function() { resolve(img); };
-          img.src = c.toDataURL('image/jpeg', 0.95);
+          c.toBlob(function(blob) {
+            var img = new Image();
+            img.onload = function() { resolve({ img: img, blob: blob }); };
+            img.src = URL.createObjectURL(blob);
+          }, 'image/jpeg', 0.95);
         });
       } catch(e) { reject(e); }
     }).catch(reject);
@@ -258,8 +264,8 @@ function addFiles(files) {
         return;
       }
       var f = heicFiles[done];
-      convertHeicToImageElement(f).then(function(img) {
-        convertedImages.push({ file: f, img: img });
+      convertHeicToImageElement(f).then(function(result) {
+        convertedImages.push({ file: f, img: result.img, blob: result.blob });
         done++;
         document.getElementById('summary').innerHTML = '<span style="color:#e0c97f;">HEIC変換中... ' + done + ' / ' + heicFiles.length + '</span>';
         setTimeout(convertNext, 10);
@@ -340,7 +346,7 @@ function processFilesWithImages(normalFiles, heicImages) {
       var item = heicImages[idx];
       calcSharpness(item.img).then(function(score) {
         var thumbUrl = makeThumbnail(item.img);
-        entries.push({ file: item.file, thumbUrl: thumbUrl, score: score });
+        entries.push({ file: item.file, thumbUrl: thumbUrl, score: score, jpgBlob: item.blob });
         done++; idx++;
         fill.style.width = (done / total * 100) + '%';
         setTimeout(next, 0);
