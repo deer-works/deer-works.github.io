@@ -245,10 +245,12 @@ function render() {
   var flds = [['生年月日',val('fBirth')],['年齢',val('fAge')],['出身地',val('fFrom')],['身長・体重',val('fBody')],['スリーサイズ',val('fThree')],['靴サイズ',val('fShoe')],['資格',val('fLicense')]];
   customEntries.forEach(function(c){if(c.label||c.value)flds.push([c.label,c.value]);});
   flds.forEach(function(f){if(f[1])html+='<tr><td class="l">'+f[0]+'</td><td class="colon">：</td><td>'+f[1]+'</td></tr>';});
-  html += '</table></div><div class="p-top-right">'+slotHtml(ms)+'</div></div>';
+  html += '</table>';
 
   var sk=val('fSkill'),hb=val('fHobby');
-  if(sk||hb){ html+='<div class="p-sec"><div class="p-sec-t">特技・趣味</div><div class="p-sec-b">'; if(sk)html+='＜特技＞'+sk+'<br>'; if(hb)html+='＜趣味＞'+hb; html+='</div></div>'; }
+  if(sk||hb){ html+='<div class="p-sec" style="margin-top:14px;"><div class="p-sec-t">特技・趣味</div><div class="p-sec-b">'; if(sk)html+='＜特技＞'+sk+'<br>'; if(hb)html+='＜趣味＞'+hb; html+='</div></div>'; }
+
+  html += '</div><div class="p-top-right">'+slotHtml(ms)+'</div></div>';
 
   var asns=snsEntries.filter(function(s){return s.handle;});
   if(asns.length){
