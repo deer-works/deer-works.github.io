@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>画像リサイズ＆クロップ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #1a1a1a; color: #e8e8e8; min-height: 100vh; padding: 32px 20px; }
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: 2px; text-align: center; }
+  .subtitle { font-size: 12px; color: #888; margin-bottom: 24px; text-align: center; }
+
+  .settings { display: flex; gap: 24px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .setting-group { background: #252525; border-radius: 8px; padding: 16px 20px; border: 1px solid #333; min-width: 200px; }
+  .setting-group-title { font-size: 12px; font-weight: 700; color: #888; margin-bottom: 10px; letter-spacing: 1px; }
+  .setting-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .setting-row:last-child { margin-bottom: 0; }
+  .setting-row label { font-size: 12px; color: #aaa; width: 28px; flex-shrink: 0; }
+  .setting-row input { width: 80px; padding: 6px 8px; border: 1px solid #555; border-radius: 4px; background: #333; color: #fff; font-size: 13px; text-align: center; font-family: inherit; }
+  .setting-row input:focus { outline: none; border-color: #888; }
+  .setting-row .unit { font-size: 11px; color: #666; }
+
+  .drop-zone { width: 100%; max-width: 900px; min-height: 140px; border: 2px dashed #444; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 0.2s; margin: 0 auto 24px; }
+  .drop-zone:hover, .drop-zone.dragover { border-color: #888; }
+  .drop-zone-text { font-size: 14px; color: #666; text-align: center; padding: 32px; }
+  input[type="file"] { display: none; }
+
+  .actions { display: flex; gap: 12px; justify-content: center; margin-bottom: 24px; }
+  .btn { padding: 10px 28px; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: #fff; color: #222; }
+  .btn-primary:hover { background: #ddd; }
+  .btn-secondary { background: #333; color: #fff; border: 1px solid #555; }
+  .btn-secondary:hover { background: #444; }
+  .btn:disabled { opacity: 0.3; cursor: default; }
+
+  .count-label { text-align: center; font-size: 12px; color: #666; margin-bottom: 16px; }
+
+  .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; max-width: 1200px; margin: 0 auto; }
+  .image-card { background: #252525; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+  .image-card-preview { position: relative; overflow: hidden; background: #111; display: flex; align-items: center; justify-content: center; }
+  .image-card-preview canvas { max-width: 100%; display: block; }
+  .image-card-info { padding: 8px 12px; }
+  .image-card-name { font-size: 11px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px; }
+  .image-card-meta { font-size: 10px; color: #555; display: flex; gap: 8px; }
+  .image-card-meta .tag { background: #333; padding: 2px 6px; border-radius: 3px; }
+  .image-card-meta .tag-h { color: #7fb4e0; }
+  .image-card-meta .tag-v { color: #e0a07f; }
+  .image-card-remove { float: right; background: none; border: none; color: #666; cursor: pointer; font-size: 16px; padding: 0 4px; }
+  .image-card-remove:hover { color: #e07f7f; }
+</style>
+</head>
+<body>
+
+<h1>IMAGE RESIZE & CROP</h1>
+<div class="subtitle">画像を指定サイズに自動リサイズ＆中央クロップ（縦横自動判別）</div>
+
+<div class="settings">
+  <div class="setting-group">
+    <div class="setting-group-title">横画像 → 出力サイズ</div>
+    <div class="setting-row"><label>W</label><input type="number" id="hWidth" value="1920"><span class="unit">px</span></div>
+    <div class="setting-row"><label>H</label><input type="number" id="hHeight" value="1080"><span class="unit">px</span></div>
+  </div>
+  <div class="setting-group">
+    <div class="setting-group-title">縦画像 → 出力サイズ</div>
+    <div class="setting-row"><label>W</label><input type="number" id="vWidth" value="1080"><span class="unit">px</span></div>
+    <div class="setting-row"><label>H</label><input type="number" id="vHeight" value="1920"><span class="unit">px</span></div>
+  </div>
+</div>
+
+<div class="drop-zone" id="dropZone">
+  <div class="drop-zone-text">
+    クリックまたはドラッグ＆ドロップで画像をアップロード<br>
+    <span style="font-size:11px; color:#555;">複数画像OK・縦横自動判別</span>
+  </div>
+</div>
+<input type="file" id="fileInput" accept="image/*" multiple>
+
+<div class="actions">
+  <button class="btn btn-primary" id="btnDownloadAll" disabled>一括ダウンロード</button>
+  <button class="btn btn-secondary" id="btnClear" disabled>全てクリア</button>
+</div>
+
+<div class="count-label" id="countLabel"></div>
+<div class="image-grid" id="imageGrid"></div>
+
+<script>
+var entries = [];
+var dropZone = document.getElementById('dropZone');
+var fileInput = document.getElementById('fileInput');
+var grid = document.getElementById('imageGrid');
+
+dropZone.addEventListener('click', function() { fileInput.click(); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', function() { addFiles(fileInput.files); fileInput.value = ''; });
+
+// Re-process when sizes change
+['hWidth','hHeight','vWidth','vHeight'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', function() { reprocessAll(); });
+});
+
+document.getElementById('btnClear').addEventListener('click', function() {
+  entries = [];
+  renderGrid();
+});
+
+document.getElementById('btnDownloadAll').addEventListener('click', function() {
+  entries.forEach(function(entry) {
+    downloadCanvas(entry.canvas, entry.file.name);
+  });
+});
+
+function addFiles(files) {
+  var arr = Array.from(files).filter(function(f) { return f.type.startsWith('image/'); });
+  var loaded = 0;
+  arr.forEach(function(file) {
+    var img = new Image();
+    img.onload = function() {
+      var entry = { file: file, img: img, canvas: null, isVertical: img.naturalHeight > img.naturalWidth };
+      processEntry(entry);
+      entries.push(entry);
+      loaded++;
+      if (loaded === arr.length) renderGrid();
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function getTargetSize(isVertical) {
+  if (isVertical) {
+    return {
+      w: parseInt(document.getElementById('vWidth').value) || 3000,
+      h: parseInt(document.getElementById('vHeight').value) || 3000
+    };
+  } else {
+    return {
+      w: parseInt(document.getElementById('hWidth').value) || 3000,
+      h: parseInt(document.getElementById('hHeight').value) || 3000
+    };
+  }
+}
+
+function processEntry(entry) {
+  var img = entry.img;
+  var target = getTargetSize(entry.isVertical);
+  var tw = target.w;
+  var th = target.h;
+  var iw = img.naturalWidth;
+  var ih = img.naturalHeight;
+
+  // Scale to cover target: fit width, crop height overflow (or vice versa)
+  var scale = Math.max(tw / iw, th / ih);
+  var sw = iw * scale;
+  var sh = ih * scale;
+
+  // Center crop offset
+  var ox = (sw - tw) / 2;
+  var oy = (sh - th) / 2;
+
+  var c = document.createElement('canvas');
+  c.width = tw;
+  c.height = th;
+  var cx = c.getContext('2d');
+
+  // Draw scaled image centered
+  cx.drawImage(img, -ox / scale, -oy / scale, tw / scale, th / scale, 0, 0, tw, th);
+
+  entry.canvas = c;
+}
+
+function reprocessAll() {
+  entries.forEach(function(entry) { processEntry(entry); });
+  renderGrid();
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  document.getElementById('btnDownloadAll').disabled = entries.length === 0;
+  document.getElementById('btnClear').disabled = entries.length === 0;
+  document.getElementById('countLabel').textContent = entries.length ? entries.length + '枚' : '';
+
+  entries.forEach(function(entry, idx) {
+    var card = document.createElement('div');
+    card.className = 'image-card';
+
+    var preview = document.createElement('div');
+    preview.className = 'image-card-preview';
+
+    // Show processed canvas as preview
+    var previewCanvas = document.createElement('canvas');
+    var target = getTargetSize(entry.isVertical);
+    var maxPreviewW = 280;
+    var ratio = maxPreviewW / target.w;
+    previewCanvas.width = target.w * ratio;
+    previewCanvas.height = target.h * ratio;
+    var pcx = previewCanvas.getContext('2d');
+    pcx.drawImage(entry.canvas, 0, 0, previewCanvas.width, previewCanvas.height);
+    preview.appendChild(previewCanvas);
+
+    var info = document.createElement('div');
+    info.className = 'image-card-info';
+
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'image-card-remove';
+    removeBtn.textContent = '\u00D7';
+    removeBtn.addEventListener('click', function() {
+      entries.splice(idx, 1);
+      renderGrid();
+    });
+
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'image-card-name';
+    nameDiv.appendChild(removeBtn);
+    nameDiv.appendChild(document.createTextNode(entry.file.name));
+
+    var metaDiv = document.createElement('div');
+    metaDiv.className = 'image-card-meta';
+    var orientTag = document.createElement('span');
+    orientTag.className = 'tag ' + (entry.isVertical ? 'tag-v' : 'tag-h');
+    orientTag.textContent = entry.isVertical ? '縦' : '横';
+    var sizeTag = document.createElement('span');
+    sizeTag.className = 'tag';
+    sizeTag.textContent = entry.img.naturalWidth + '×' + entry.img.naturalHeight + ' → ' + entry.canvas.width + '×' + entry.canvas.height;
+    metaDiv.appendChild(orientTag);
+    metaDiv.appendChild(sizeTag);
+
+    info.appendChild(nameDiv);
+    info.appendChild(metaDiv);
+    card.appendChild(preview);
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+}
+
+function downloadCanvas(canvas, filename) {
+  canvas.toBlob(function(blob) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    var name = filename.replace(/\.[^.]+$/, '') + '_resized.png';
+    a.download = name;
+    a.click();
+  }, 'image/png');
+}
+</script>
+</body>
+</html>

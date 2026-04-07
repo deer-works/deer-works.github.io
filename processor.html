@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>画像処理ツール</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #1a1a1a; color: #e8e8e8; min-height: 100vh; padding: 32px 20px; }
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: 2px; text-align: center; }
+  .subtitle { font-size: 12px; color: #888; margin-bottom: 24px; text-align: center; }
+
+  .settings { display: flex; gap: 16px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .setting-group { background: #252525; border-radius: 8px; padding: 14px 18px; border: 1px solid #333; }
+  .setting-group-title { font-size: 11px; font-weight: 700; color: #888; margin-bottom: 10px; letter-spacing: 1px; }
+  .setting-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .setting-row:last-child { margin-bottom: 0; }
+  .setting-row label { font-size: 12px; color: #aaa; width: 28px; flex-shrink: 0; }
+  .setting-row input[type="number"] { width: 72px; padding: 6px 8px; border: 1px solid #555; border-radius: 4px; background: #333; color: #fff; font-size: 13px; text-align: center; font-family: inherit; }
+  .setting-row input[type="number"]:focus { outline: none; border-color: #888; }
+  .setting-row .unit { font-size: 11px; color: #666; }
+  select { padding: 6px 8px; border: 1px solid #555; border-radius: 4px; background: #333; color: #fff; font-size: 12px; font-family: inherit; }
+  select:focus { outline: none; border-color: #888; }
+
+  .wm-row { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .wm-row:last-child { margin-bottom: 0; }
+  .wm-label { font-size: 12px; color: #aaa; white-space: nowrap; min-width: 40px; }
+  .wm-row input[type="range"] { width: 90px; }
+  .wm-row .wm-val { font-size: 11px; color: #666; width: 36px; }
+  .check-field { display: flex; align-items: center; gap: 8px; }
+  .check-field input[type="checkbox"] { width: 15px; height: 15px; }
+  .check-field label { font-size: 12px; color: #aaa; margin: 0; }
+
+  .size-custom { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .size-custom input { width: 64px; padding: 5px 6px; border: 1px solid #555; border-radius: 4px; background: #333; color: #fff; font-size: 12px; text-align: center; }
+  .size-custom .x { color: #666; font-size: 12px; }
+
+  .drop-zone { width: 100%; max-width: 900px; min-height: 140px; border: 2px dashed #444; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 0.2s; margin: 0 auto 24px; }
+  .drop-zone:hover, .drop-zone.dragover { border-color: #888; }
+  .drop-zone-text { font-size: 14px; color: #666; text-align: center; padding: 32px; }
+  input[type="file"] { display: none; }
+
+  .actions { display: flex; gap: 12px; justify-content: center; margin-bottom: 24px; }
+  .btn { padding: 10px 28px; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: #fff; color: #222; }
+  .btn-primary:hover { background: #ddd; }
+  .btn-secondary { background: #333; color: #fff; border: 1px solid #555; }
+  .btn-secondary:hover { background: #444; }
+  .btn:disabled { opacity: 0.3; cursor: default; }
+
+  .count-label { text-align: center; font-size: 12px; color: #666; margin-bottom: 16px; }
+
+  .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; max-width: 1200px; margin: 0 auto; }
+  .image-card { background: #252525; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+  .image-card-preview { position: relative; overflow: hidden; background: #111; display: flex; align-items: center; justify-content: center; }
+  .image-card-preview canvas { max-width: 100%; display: block; }
+  .image-card-wm { position: absolute; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .image-card-wm:active { cursor: grabbing; }
+  .image-card-wm span { font-weight: 900; white-space: nowrap; paint-order: stroke fill; }
+  .image-card-crop { display: flex; gap: 6px; padding: 6px 12px; align-items: center; background: #1e1e1e; font-size: 11px; }
+  .image-card-crop label { color: #888; }
+  .crop-btn { padding: 3px 8px; border: 1px solid #444; border-radius: 3px; background: #333; color: #aaa; font-size: 10px; cursor: pointer; }
+  .crop-btn.active { background: #555; color: #fff; border-color: #777; }
+  .image-card-info { padding: 8px 12px; }
+  .image-card-name { font-size: 11px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px; }
+  .image-card-meta { font-size: 10px; color: #555; display: flex; gap: 6px; flex-wrap: wrap; }
+  .image-card-meta .tag { background: #333; padding: 2px 6px; border-radius: 3px; }
+  .tag-h { color: #7fb4e0; }
+  .tag-v { color: #e0a07f; }
+  .image-card-remove { float: right; background: none; border: none; color: #666; cursor: pointer; font-size: 16px; padding: 0 4px; }
+  .image-card-remove:hover { color: #e07f7f; }
+</style>
+</head>
+<body>
+
+<h1>IMAGE PROCESSOR</h1>
+<div class="subtitle">リサイズ＆クロップ ＋ SAMPLE透かし（ドラッグで位置調整可）</div>
+
+<div class="settings">
+  <div class="setting-group">
+    <div class="setting-group-title">横画像 → 出力サイズ</div>
+    <select id="hPreset" style="width:100%; margin-bottom:8px;">
+      <option value="none">リサイズなし</option>
+      <option value="custom" selected>カスタム</option>
+      <option value="1074x718">L版 (1074×718)</option>
+      <option value="1524x1074">2L版 (1524×1074)</option>
+      <option value="1920x1080">FHD (1920×1080)</option>
+      <option value="3000x2000">3000×2000</option>
+    </select>
+    <div class="size-custom" id="hCustom">
+      <input type="number" id="hWidth" value="1920"><span class="x">×</span><input type="number" id="hHeight" value="1080"><span class="unit" style="font-size:11px;color:#666;">px</span>
+    </div>
+  </div>
+  <div class="setting-group">
+    <div class="setting-group-title">縦画像 → 出力サイズ</div>
+    <select id="vPreset" style="width:100%; margin-bottom:8px;">
+      <option value="none">リサイズなし</option>
+      <option value="custom" selected>カスタム</option>
+      <option value="718x1074">L版 (718×1074)</option>
+      <option value="1074x1524">2L版 (1074×1524)</option>
+      <option value="1080x1920">FHD (1080×1920)</option>
+      <option value="2000x3000">2000×3000</option>
+    </select>
+    <div class="size-custom" id="vCustom">
+      <input type="number" id="vWidth" value="1080"><span class="x">×</span><input type="number" id="vHeight" value="1920"><span class="unit" style="font-size:11px;color:#666;">px</span>
+    </div>
+  </div>
+  <div class="setting-group">
+    <div class="setting-group-title">SAMPLE透かし</div>
+    <div class="check-field" style="margin-bottom:8px;">
+      <input type="checkbox" id="wmEnabled" checked>
+      <label for="wmEnabled">透かしを入れる</label>
+    </div>
+    <div class="wm-row"><span class="wm-label">フォント</span><select id="wmFont" style="width:120px;">
+      <option value="Arial, Helvetica, sans-serif">Arial</option>
+      <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
+      <option value="Georgia, serif">Georgia</option>
+      <option value="'Times New Roman', serif">Times</option>
+      <option value="'Courier New', monospace">Courier</option>
+      <option value="Impact, sans-serif">Impact</option>
+      <option value="'Hiragino Sans', sans-serif">ヒラギノ角</option>
+      <option value="'Hiragino Mincho ProN', serif">ヒラギノ明朝</option>
+    </select></div>
+    <div class="wm-row"><span class="wm-label">文字</span><input type="range" id="wmOpacity" min="10" max="80" value="40"><span class="wm-val" id="wmOpacityVal">40%</span></div>
+    <div class="wm-row"><span class="wm-label">枠</span><input type="range" id="wmStroke" min="0" max="100" value="80"><span class="wm-val" id="wmStrokeVal">80%</span></div>
+    <div class="wm-row"><span class="wm-label">サイズ</span><input type="range" id="wmSize" min="10" max="50" value="22"><span class="wm-val" id="wmSizeVal">22%</span></div>
+  </div>
+</div>
+
+<div class="drop-zone" id="dropZone">
+  <div class="drop-zone-text">
+    クリックまたはドラッグ＆ドロップで画像をアップロード<br>
+    <span style="font-size:11px; color:#555;">複数画像OK・縦横自動判別・追加アップロード可</span>
+  </div>
+</div>
+<input type="file" id="fileInput" accept="image/*" multiple>
+
+<div class="actions">
+  <button class="btn btn-primary" id="btnDownloadAll" disabled>一括ダウンロード</button>
+  <button class="btn btn-secondary" id="btnClear" disabled>全てクリア</button>
+</div>
+
+<div class="count-label" id="countLabel"></div>
+<div class="image-grid" id="imageGrid"></div>
+
+<script>
+var entries = [];
+var nextId = 0;
+var dropZone = document.getElementById('dropZone');
+var fileInput = document.getElementById('fileInput');
+var grid = document.getElementById('imageGrid');
+
+// Preset handling
+function setupPreset(presetId, customId, wId, hId) {
+  var preset = document.getElementById(presetId);
+  var custom = document.getElementById(customId);
+  preset.addEventListener('change', function() {
+    if (this.value === 'custom') {
+      custom.style.display = 'flex';
+    } else if (this.value === 'none') {
+      custom.style.display = 'none';
+    } else {
+      custom.style.display = 'none';
+      var parts = this.value.split('x');
+      document.getElementById(wId).value = parts[0];
+      document.getElementById(hId).value = parts[1];
+    }
+    reprocessAll();
+  });
+}
+setupPreset('hPreset', 'hCustom', 'hWidth', 'hHeight');
+setupPreset('vPreset', 'vCustom', 'vWidth', 'vHeight');
+
+// Drop zone
+dropZone.addEventListener('click', function() { fileInput.click(); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', function() { addFiles(fileInput.files); fileInput.value = ''; });
+
+// Settings change
+['hWidth','hHeight','vWidth','vHeight'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', reprocessAll);
+});
+document.getElementById('wmEnabled').addEventListener('change', function() { renderGrid(); });
+document.getElementById('wmFont').addEventListener('change', function() { renderGrid(); });
+['wmOpacity','wmStroke','wmSize'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', function() {
+    document.getElementById(id + 'Val').textContent = this.value + '%';
+    updateAllWatermarks();
+  });
+});
+
+document.getElementById('btnClear').addEventListener('click', function() { entries = []; renderGrid(); });
+document.getElementById('btnDownloadAll').addEventListener('click', downloadAll);
+
+function addFiles(files) {
+  var arr = Array.from(files).filter(function(f) { return f.type.startsWith('image/'); });
+  var loaded = 0;
+  arr.forEach(function(file) {
+    var img = new Image();
+    img.onload = function() {
+      var entry = { file: file, img: img, canvas: null, isVertical: img.naturalHeight > img.naturalWidth, wmPosX: 0.5, wmPosY: 0.5, cropAlign: 'center', id: nextId++ };
+      processEntry(entry);
+      entries.push(entry);
+      loaded++;
+      if (loaded === arr.length) renderGrid();
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function getTargetSize(isVertical) {
+  var presetVal = isVertical ? document.getElementById('vPreset').value : document.getElementById('hPreset').value;
+  if (presetVal === 'none') return null;
+  if (isVertical) {
+    return { w: parseInt(document.getElementById('vWidth').value) || 1080, h: parseInt(document.getElementById('vHeight').value) || 1920 };
+  } else {
+    return { w: parseInt(document.getElementById('hWidth').value) || 1920, h: parseInt(document.getElementById('hHeight').value) || 1080 };
+  }
+}
+
+function processEntry(entry) {
+  var img = entry.img;
+  var target = getTargetSize(entry.isVertical);
+
+  if (!target) {
+    // No resize: just copy original
+    var c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    entry.canvas = c;
+    return;
+  }
+
+  var tw = target.w, th = target.h;
+  var iw = img.naturalWidth, ih = img.naturalHeight;
+  var scale = Math.max(tw / iw, th / ih);
+  var sW = tw / scale, sH = th / scale;
+
+  // Crop alignment
+  var sx, sy;
+  if (entry.cropAlign === 'center') {
+    sx = (iw - sW) / 2;
+    sy = (ih - sH) / 2;
+  } else if (entry.cropAlign === 'top' || entry.cropAlign === 'left') {
+    sx = 0; sy = 0;
+  } else if (entry.cropAlign === 'bottom' || entry.cropAlign === 'right') {
+    sx = iw - sW; sy = ih - sH;
+  }
+
+  var c = document.createElement('canvas');
+  c.width = tw; c.height = th;
+  c.getContext('2d').drawImage(img, sx, sy, sW, sH, 0, 0, tw, th);
+  entry.canvas = c;
+}
+
+function reprocessAll() {
+  entries.forEach(function(e) { processEntry(e); });
+  renderGrid();
+}
+
+function getWmSettings() {
+  return {
+    enabled: document.getElementById('wmEnabled').checked,
+    opacity: parseInt(document.getElementById('wmOpacity').value) / 100,
+    strokeOpacity: parseInt(document.getElementById('wmStroke').value) / 100,
+    sizeRatio: parseInt(document.getElementById('wmSize').value) / 100,
+    font: document.getElementById('wmFont').value
+  };
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  document.getElementById('btnDownloadAll').disabled = entries.length === 0;
+  document.getElementById('btnClear').disabled = entries.length === 0;
+  document.getElementById('countLabel').textContent = entries.length ? entries.length + '枚' : '';
+  var wm = getWmSettings();
+
+  entries.forEach(function(entry) {
+    var card = document.createElement('div');
+    card.className = 'image-card';
+    var preview = document.createElement('div');
+    preview.className = 'image-card-preview';
+
+    var maxW = 280;
+    var ratio = maxW / entry.canvas.width;
+    var pCanvas = document.createElement('canvas');
+    pCanvas.width = entry.canvas.width * ratio;
+    pCanvas.height = entry.canvas.height * ratio;
+    pCanvas.getContext('2d').drawImage(entry.canvas, 0, 0, pCanvas.width, pCanvas.height);
+    preview.appendChild(pCanvas);
+
+    // Watermark overlay
+    if (wm.enabled) {
+      var wmDiv = document.createElement('div');
+      wmDiv.className = 'image-card-wm';
+      var wmSpan = document.createElement('span');
+      wmSpan.textContent = 'SAMPLE';
+      wmDiv.appendChild(wmSpan);
+      preview.appendChild(wmDiv);
+      setTimeout(function() { setupWatermark(preview, wmDiv, wmSpan, entry); }, 10);
+    }
+
+    // Crop position controls
+    var target = getTargetSize(entry.isVertical);
+    if (target) {
+      var cropBar = document.createElement('div');
+      cropBar.className = 'image-card-crop';
+      var cropLabel = document.createElement('label');
+      cropLabel.textContent = 'クロップ位置：';
+      cropBar.appendChild(cropLabel);
+
+      var isWider = (entry.img.naturalWidth / entry.img.naturalHeight) > (target.w / target.h);
+      var positions = isWider ? ['left', 'center', 'right'] : ['top', 'center', 'bottom'];
+      var posLabels = { left: '左', center: '中央', right: '右', top: '上', bottom: '下' };
+
+      positions.forEach(function(pos) {
+        var btn = document.createElement('button');
+        btn.className = 'crop-btn' + (entry.cropAlign === pos ? ' active' : '');
+        btn.textContent = posLabels[pos];
+        btn.addEventListener('click', function() {
+          entry.cropAlign = pos;
+          processEntry(entry);
+          renderGrid();
+        });
+        cropBar.appendChild(btn);
+      });
+      card.appendChild(preview);
+      card.appendChild(cropBar);
+    } else {
+      card.appendChild(preview);
+    }
+
+    // Info
+    var info = document.createElement('div');
+    info.className = 'image-card-info';
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'image-card-remove';
+    removeBtn.textContent = '\u00D7';
+    removeBtn.addEventListener('click', function() { entries = entries.filter(function(e) { return e.id !== entry.id; }); renderGrid(); });
+
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'image-card-name';
+    nameDiv.appendChild(removeBtn);
+    nameDiv.appendChild(document.createTextNode(entry.file.name));
+
+    var metaDiv = document.createElement('div');
+    metaDiv.className = 'image-card-meta';
+    var oTag = document.createElement('span');
+    oTag.className = 'tag ' + (entry.isVertical ? 'tag-v' : 'tag-h');
+    oTag.textContent = entry.isVertical ? '縦' : '横';
+    var sTag = document.createElement('span');
+    sTag.className = 'tag';
+    sTag.textContent = entry.img.naturalWidth + '\u00D7' + entry.img.naturalHeight + ' \u2192 ' + entry.canvas.width + '\u00D7' + entry.canvas.height;
+    metaDiv.appendChild(oTag);
+    metaDiv.appendChild(sTag);
+
+    info.appendChild(nameDiv);
+    info.appendChild(metaDiv);
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+}
+
+function setupWatermark(preview, wmDiv, wmSpan, entry) {
+  var pw = preview.offsetWidth, ph = preview.offsetHeight;
+  if (!pw) return;
+  var wm = getWmSettings();
+  var fontSize = pw * wm.sizeRatio;
+  var stroke = Math.max(fontSize * 0.03, 1);
+
+  wmSpan.style.fontFamily = wm.font;
+  wmSpan.style.fontSize = fontSize + 'px';
+  wmSpan.style.color = 'rgba(0,0,0,' + wm.opacity + ')';
+  wmSpan.style.webkitTextStroke = stroke + 'px rgba(255,255,255,' + wm.strokeOpacity + ')';
+
+  var wmW = wmDiv.offsetWidth, wmH = wmDiv.offsetHeight;
+  wmDiv.style.left = (entry.wmPosX * pw - wmW / 2) + 'px';
+  wmDiv.style.top = (entry.wmPosY * ph - wmH / 2) + 'px';
+
+  var isDragging = false, startX, startY, origLeft, origTop;
+  function onStart(e) { e.preventDefault(); e.stopPropagation(); isDragging = true; var p = e.touches ? e.touches[0] : e; startX = p.clientX; startY = p.clientY; origLeft = wmDiv.offsetLeft; origTop = wmDiv.offsetTop; }
+  function onMove(e) { if (!isDragging) return; e.preventDefault(); var p = e.touches ? e.touches[0] : e; var nx = Math.max(0, Math.min(pw - wmDiv.offsetWidth, origLeft + p.clientX - startX)); var ny = Math.max(0, Math.min(ph - wmDiv.offsetHeight, origTop + p.clientY - startY)); wmDiv.style.left = nx + 'px'; wmDiv.style.top = ny + 'px'; entry.wmPosX = (nx + wmDiv.offsetWidth / 2) / pw; entry.wmPosY = (ny + wmDiv.offsetHeight / 2) / ph; }
+  function onEnd() { isDragging = false; }
+  wmDiv.addEventListener('mousedown', onStart);
+  wmDiv.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
+}
+
+function updateAllWatermarks() {
+  var cards = grid.querySelectorAll('.image-card-preview');
+  entries.forEach(function(entry, i) {
+    if (!cards[i]) return;
+    var wmDiv = cards[i].querySelector('.image-card-wm');
+    if (!wmDiv) return;
+    setupWatermark(cards[i], wmDiv, wmDiv.querySelector('span'), entry);
+  });
+}
+
+function downloadAll() {
+  var wm = getWmSettings();
+  entries.forEach(function(entry) {
+    var c = document.createElement('canvas');
+    c.width = entry.canvas.width; c.height = entry.canvas.height;
+    var cx = c.getContext('2d');
+    cx.drawImage(entry.canvas, 0, 0);
+
+    if (wm.enabled) {
+      var size = c.width * wm.sizeRatio;
+      var stroke = Math.max(size * 0.03, 2);
+      cx.save();
+      cx.translate(entry.wmPosX * c.width, entry.wmPosY * c.height);
+      cx.font = '900 ' + size + 'px ' + wm.font;
+      cx.textAlign = 'center';
+      cx.textBaseline = 'middle';
+      cx.lineJoin = 'round';
+      cx.strokeStyle = 'rgba(255,255,255,' + wm.strokeOpacity + ')';
+      cx.lineWidth = stroke;
+      cx.strokeText('SAMPLE', 0, 0);
+      cx.fillStyle = 'rgba(0,0,0,' + wm.opacity + ')';
+      cx.fillText('SAMPLE', 0, 0);
+      cx.restore();
+    }
+
+    c.toBlob(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (wm.enabled ? 'SAMPLE_' : '') + entry.file.name;
+      a.click();
+    }, 'image/png');
+  });
+}
+</script>
+</body>
+</html>

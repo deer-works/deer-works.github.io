@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEIC → JPG 変換</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #1a1a1a; color: #e8e8e8; min-height: 100vh; padding: 32px 20px; }
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: 2px; text-align: center; }
+  .subtitle { font-size: 12px; color: #888; margin-bottom: 24px; text-align: center; }
+  .controls { display: flex; gap: 16px; justify-content: center; margin-bottom: 20px; align-items: center; }
+  .controls label { font-size: 12px; color: #aaa; display: flex; align-items: center; gap: 6px; }
+  .controls input[type="range"] { width: 100px; }
+  .controls .val { font-size: 11px; color: #666; width: 36px; }
+  .drop-zone { width: 100%; max-width: 900px; min-height: 160px; border: 2px dashed #444; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 0.2s; margin: 0 auto 24px; }
+  .drop-zone:hover, .drop-zone.dragover { border-color: #888; }
+  .drop-zone-text { font-size: 14px; color: #666; text-align: center; padding: 40px; }
+  input[type="file"] { display: none; }
+  .progress-bar { width: 100%; max-width: 600px; height: 6px; background: #333; border-radius: 3px; margin: 0 auto 20px; overflow: hidden; display: none; }
+  .progress-fill { height: 100%; background: #7fe08c; width: 0%; transition: width 0.2s; }
+  .status { text-align: center; font-size: 13px; margin-bottom: 20px; min-height: 20px; }
+  .actions { display: flex; gap: 12px; justify-content: center; margin-bottom: 24px; }
+  .btn { padding: 10px 28px; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: #fff; color: #222; }
+  .btn-primary:hover { background: #ddd; }
+  .btn-secondary { background: #333; color: #fff; border: 1px solid #555; }
+  .btn-secondary:hover { background: #444; }
+  .btn:disabled { opacity: 0.3; cursor: default; }
+  .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; max-width: 1200px; margin: 0 auto; }
+  .image-card { background: #252525; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+  .image-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .image-card-info { padding: 6px 10px; }
+  .image-card-name { font-size: 10px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
+  .image-card-size { font-size: 10px; color: #555; }
+  .image-card.error { border-color: #e07f7f; }
+  .note { text-align: center; font-size: 11px; color: #555; margin-top: 24px; }
+  .lib-status { text-align: center; font-size: 11px; margin-bottom: 16px; }
+</style>
+<script src="https://unpkg.com/libheif-js@1.18.2/libheif-wasm/libheif-bundle.js"></script>
+</head>
+<body>
+
+<h1>HEIC → JPG CONVERTER</h1>
+<div class="subtitle">HEICファイルをJPGに一括変換（ブラウザ内処理・アップロードなし）</div>
+<div class="lib-status" id="libStatus"><span style="color:#e0c97f;">デコーダ読み込み中...</span></div>
+
+<div class="controls">
+  <label>JPG品質 <input type="range" id="quality" min="50" max="100" value="100"> <span class="val" id="qualityVal">100%</span></label>
+</div>
+
+<div class="drop-zone" id="dropZone">
+  <div class="drop-zone-text">
+    クリックまたはドラッグ＆ドロップ<br>でHEICファイルをアップロード<br><br>
+    <span style="font-size:11px; color:#555;">複数ファイルOK・100枚以上対応</span>
+  </div>
+</div>
+<input type="file" id="fileInput" accept=".heic,.heif,image/*" multiple>
+
+<div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="status" id="status"></div>
+
+<div class="actions">
+  <button class="btn btn-primary" id="btnDownloadAll" disabled>一括ダウンロード</button>
+  <button class="btn btn-secondary" id="btnClear" disabled>全てクリア</button>
+</div>
+
+<div class="image-grid" id="imageGrid"></div>
+<div class="note">※ 変換はすべてブラウザ内で処理されます。画像がサーバーにアップロードされることはありません。</div>
+
+<script>
+var decoder = null;
+
+(function initLibheif() {
+  if (typeof libheif === 'undefined') {
+    setTimeout(initLibheif, 300);
+    return;
+  }
+
+  // libheif may be a factory function (Emscripten module) or an already-initialized object
+  var mod = typeof libheif === 'function' ? libheif() : libheif;
+
+  function tryInit(retries) {
+    if (mod.HeifDecoder) {
+      decoder = new mod.HeifDecoder();
+      document.getElementById('libStatus').innerHTML = '<span style="color:#7fe08c;">デコーダ準備完了</span>';
+      setTimeout(function() { document.getElementById('libStatus').style.display = 'none'; }, 2000);
+    } else if (mod.then) {
+      // It's a promise
+      mod.then(function(resolved) {
+        mod = resolved;
+        tryInit(0);
+      }).catch(function(e) {
+        document.getElementById('libStatus').innerHTML = '<span style="color:#e07f7f;">デコーダ初期化失敗: ' + e + '</span>';
+      });
+    } else if (retries > 0) {
+      setTimeout(function() { tryInit(retries - 1); }, 300);
+    } else {
+      document.getElementById('libStatus').innerHTML = '<span style="color:#e07f7f;">デコーダ初期化失敗</span>';
+    }
+  }
+
+  if (mod && mod.then) {
+    mod.then(function(resolved) {
+      mod = resolved;
+      tryInit(20);
+    });
+  } else {
+    tryInit(20);
+  }
+})();
+
+var entries = [];
+var dropZone = document.getElementById('dropZone');
+var fileInput = document.getElementById('fileInput');
+var grid = document.getElementById('imageGrid');
+
+document.getElementById('quality').addEventListener('input', function() {
+  document.getElementById('qualityVal').textContent = this.value + '%';
+});
+dropZone.addEventListener('click', function() { fileInput.click(); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', function() { addFiles(fileInput.files); fileInput.value = ''; });
+
+document.getElementById('btnClear').addEventListener('click', function() {
+  entries = []; grid.innerHTML = '';
+  document.getElementById('status').textContent = '';
+  document.getElementById('btnDownloadAll').disabled = true;
+  document.getElementById('btnClear').disabled = true;
+  document.getElementById('progressBar').style.display = 'none';
+});
+document.getElementById('btnDownloadAll').addEventListener('click', function() {
+  entries.forEach(function(e) { if (e.blob) downloadBlob(e.blob, e.jpgName); });
+});
+
+function isHeic(file) {
+  var n = file.name.toLowerCase();
+  return n.endsWith('.heic') || n.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
+}
+
+function addFiles(files) {
+  var arr = Array.from(files).filter(function(f) {
+    return f.type.startsWith('image/') || isHeic(f) || f.name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|heic|heif)$/);
+  });
+  if (!arr.length) return;
+
+  var heicFiles = arr.filter(isHeic);
+  var normalFiles = arr.filter(function(f) { return !isHeic(f); });
+
+  normalFiles.forEach(function(f) {
+    entries.push({ file: f, jpgName: f.name, blob: f, status: 'done' });
+  });
+
+  if (!heicFiles.length) { renderGrid(); updateStatus(); return; }
+
+  if (!decoder) {
+    document.getElementById('status').innerHTML = '<span style="color:#e07f7f;">デコーダが利用できません</span>';
+    renderGrid(); updateStatus(); return;
+  }
+
+  var bar = document.getElementById('progressBar');
+  var fill = document.getElementById('progressFill');
+  bar.style.display = 'block'; fill.style.width = '0%';
+  var quality = parseInt(document.getElementById('quality').value) / 100;
+  var done = 0;
+
+  function convertNext() {
+    if (done >= heicFiles.length) {
+      bar.style.display = 'none'; renderGrid(); updateStatus(); return;
+    }
+    var file = heicFiles[done];
+    var jpgName = file.name.replace(/\.heic$|\.heif$/i, '.jpg');
+    var entry = { file: file, jpgName: jpgName, blob: null, status: 'converting' };
+    entries.push(entry);
+
+    file.arrayBuffer().then(function(buffer) {
+      try {
+        var data = decoder.decode(new Uint8Array(buffer));
+        if (!data || !data.length) throw new Error('no image data');
+        var image = data[0];
+        var w = image.get_width();
+        var h = image.get_height();
+        var c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        var cx = c.getContext('2d');
+        var imgData = cx.createImageData(w, h);
+        image.display(imgData, function(d) {
+          cx.putImageData(d || imgData, 0, 0);
+          c.toBlob(function(blob) {
+            entry.blob = blob; entry.status = 'done'; advance();
+          }, 'image/jpeg', quality);
+        });
+      } catch(e) {
+        console.warn('decode error:', file.name, e.message);
+        entry.status = 'error'; advance();
+      }
+    }).catch(function(e) {
+      console.warn('read error:', file.name, e);
+      entry.status = 'error'; advance();
+    });
+
+    function advance() {
+      done++;
+      fill.style.width = (done / heicFiles.length * 100) + '%';
+      document.getElementById('status').innerHTML = '<span style="color:#e0c97f;">変換中... ' + done + ' / ' + heicFiles.length + '</span>';
+      setTimeout(convertNext, 10);
+    }
+  }
+  convertNext();
+}
+
+function updateStatus() {
+  var ok = entries.filter(function(e) { return e.status === 'done'; }).length;
+  var ng = entries.filter(function(e) { return e.status === 'error'; }).length;
+  var msg = '<span style="color:#7fe08c;">' + ok + '枚 変換完了</span>';
+  if (ng) msg += '　<span style="color:#e07f7f;">' + ng + '枚 失敗</span>';
+  document.getElementById('status').innerHTML = msg;
+  document.getElementById('btnDownloadAll').disabled = ok === 0;
+  document.getElementById('btnClear').disabled = entries.length === 0;
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  entries.forEach(function(entry) {
+    var card = document.createElement('div');
+    card.className = 'image-card' + (entry.status === 'error' ? ' error' : '');
+    if (entry.blob) {
+      var img = document.createElement('img');
+      img.src = URL.createObjectURL(entry.blob);
+      card.appendChild(img);
+    }
+    var info = document.createElement('div');
+    info.className = 'image-card-info';
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'image-card-name';
+    nameDiv.textContent = entry.jpgName;
+    var sizeDiv = document.createElement('div');
+    sizeDiv.className = 'image-card-size';
+    if (entry.status === 'done' && entry.blob) {
+      var kb = Math.round(entry.blob.size / 1024);
+      sizeDiv.textContent = kb > 1024 ? (kb / 1024).toFixed(1) + ' MB' : kb + ' KB';
+    } else if (entry.status === 'error') {
+      sizeDiv.innerHTML = '<span style="color:#e07f7f;">変換失敗</span>';
+    }
+    info.appendChild(nameDiv); info.appendChild(sizeDiv);
+    card.appendChild(info); grid.appendChild(card);
+  });
+}
+
+function downloadBlob(blob, name) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name; a.click();
+}
+</script>
+</body>
+</html>

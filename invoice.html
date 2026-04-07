@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>御請求書</title>
+<style>
+  @media print {
+    html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+    .input-panel { display: none !important; }
+    .layout { display: block !important; height: auto !important; background: #fff !important; }
+    .preview-wrap { display: block !important; width: auto !important; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: #fff !important; border: none !important; box-shadow: none !important; }
+    .page { box-shadow: none !important; margin: 0 !important; padding: 15mm 18mm !important; min-height: 0 !important; width: auto !important; background: #fff !important; }
+    .p-header { margin-bottom: 24px !important; }
+    .p-title { margin-bottom: 14px !important; }
+    .p-meta { margin-bottom: 0 !important; }
+    .p-meta-item { gap: 16px !important; }
+    .p-parties { margin-bottom: 22px !important; }
+    .p-to-name { padding-bottom: 4px !important; border-bottom: 2px solid #222 !important; }
+    .p-to-sub { margin-left: 8px !important; }
+    .p-from { line-height: 1.8 !important; }
+    .p-total-bar { background: #f5f5f5 !important; border: 1px solid #ddd !important; border-radius: 4px !important; padding: 12px 18px !important; margin-bottom: 22px !important; }
+    .p-table { margin-bottom: 16px !important; }
+    .p-table thead th { background: #333 !important; color: #fff !important; padding: 7px 8px !important; }
+    .p-table tbody td { padding: 8px 8px !important; border-bottom: 1px solid #eee !important; }
+    .p-table tbody tr:last-child td { border-bottom: 1px solid #ccc !important; }
+    .p-totals { margin-bottom: 20px !important; }
+    .p-totals-row { padding: 4px 0 !important; border-bottom: 1px solid #eee !important; }
+    .p-totals-row.grand { border-top: 2px solid #222 !important; border-bottom: none !important; padding-top: 6px !important; margin-top: 2px !important; }
+    .p-footer { margin-top: 8px !important; }
+    .p-footer-title { margin-bottom: 4px !important; }
+    @page { size: A4; margin: 0; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-size: 13px; color: #222; background: #e8e8e8; }
+
+  /* Layout */
+  .layout { display: flex; height: 100vh; }
+  .preview-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; padding: 24px; background: #ddd; }
+  .input-panel { width: 380px; background: #fff; border-left: 1px solid #ccc; overflow-y: auto; padding: 20px 24px; flex-shrink: 0; }
+
+  /* Input panel */
+  .panel-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #222; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; font-weight: 600; }
+  .field input, .field textarea { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; font-family: inherit; }
+  .field input:focus, .field textarea:focus { outline: none; border-color: #888; }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  .section-label { font-size: 12px; font-weight: 700; color: #333; margin: 20px 0 10px; padding-top: 12px; border-top: 1px solid #eee; }
+  .item-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+  .item-row .item-no { width: 24px; text-align: center; color: #999; font-size: 11px; flex-shrink: 0; }
+  .item-row input.item-name { flex: 1; }
+  .item-row input.item-qty { width: 50px; text-align: center; }
+  .item-row input.item-price { width: 90px; text-align: right; }
+  .btn-row { display: flex; gap: 8px; margin: 8px 0 16px; }
+  .btn-small { padding: 5px 14px; border: 1px solid #ccc; border-radius: 4px; background: #f5f5f5; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .btn-small:hover { background: #eee; }
+  .btn-print { width: 100%; padding: 12px; background: #222; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; font-family: inherit; }
+  .btn-print:hover { background: #444; }
+
+  /* Page (A4 preview) */
+  .page { width: 210mm; min-height: 297mm; background: #fff; padding: 20mm 20mm; box-shadow: 0 2px 8px rgba(0,0,0,0.15); flex-shrink: 0; }
+  .p-header { margin-bottom: 28px; }
+  .p-title { font-size: 22px; font-weight: 700; letter-spacing: 4px; margin-bottom: 16px; text-align: center; }
+  .p-meta { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; gap: 4px; }
+  .p-meta-item { display: flex; gap: 20px; }
+  .p-meta-label { color: #555; }
+
+  .p-parties { display: flex; justify-content: space-between; margin-bottom: 24px; }
+  .p-to { flex: 1; }
+  .p-to-name { font-size: 16px; font-weight: 700; border-bottom: 2px solid #222; padding-bottom: 4px; display: inline; }
+  .p-to-sub { font-size: 14px; color: #222; margin-left: 8px; display: inline; }
+  .p-from { width: 220px; font-size: 10.5px; line-height: 1.8; }
+
+  .p-total-bar { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 14px 18px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+  .p-total-label { font-size: 11px; color: #555; }
+  .p-total-amount { font-size: 20px; font-weight: 700; }
+
+  .p-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  .p-table thead th { background: #333; color: #fff; padding: 6px 8px; font-size: 10px; font-weight: 600; text-align: left; }
+  .p-table thead th.r { text-align: right; }
+  .p-table thead th.c { text-align: center; }
+  .p-table tbody td { padding: 7px 8px; border-bottom: 1px solid #eee; font-size: 11px; }
+  .p-table tbody td.num { text-align: center; color: #aaa; font-size: 10px; }
+  .p-table tbody td.r { text-align: right; }
+  .p-table tbody td.c { text-align: center; }
+  .p-table tbody td.amount { text-align: right; font-weight: 600; }
+  .p-table tbody tr:last-child td { border-bottom: 1px solid #ccc; }
+
+  .p-totals { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+  .p-totals-inner { width: 220px; font-size: 11px; }
+  .p-totals-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee; }
+  .p-totals-row.grand { border-top: 2px solid #222; border-bottom: none; font-size: 13px; font-weight: 700; padding-top: 6px; margin-top: 2px; }
+
+  .p-footer { font-size: 12px; line-height: 1.8; }
+  .p-footer-title { font-weight: 700; margin-bottom: 4px; font-size: 12px; }
+  .p-footer-body { color: #444; white-space: pre-line; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Left: Preview -->
+  <div class="preview-wrap">
+    <div class="page" id="page">
+      <div class="p-header">
+        <div class="p-title">御請求書</div>
+        <div class="p-meta">
+          <div class="p-meta-item"><span class="p-meta-label">発行日</span><span id="pDate">2026年4月6日</span></div>
+          <div class="p-meta-item"><span class="p-meta-label">お支払期限</span><span id="pDue">2026年4月30日</span></div>
+        </div>
+      </div>
+      <div class="p-parties">
+        <div class="p-to">
+          <div class="p-to-name" id="pTo"></div>
+          <div class="p-to-sub">御中</div>
+        </div>
+        <div class="p-from" id="pFrom"></div>
+      </div>
+      <div class="p-total-bar">
+        <div class="p-total-label">ご請求金額（税込）</div>
+        <div class="p-total-amount" id="pGrandTotal">-</div>
+      </div>
+      <table class="p-table">
+        <thead>
+          <tr><th style="width:28px;" class="c">No</th><th>品目・内容</th><th style="width:50px;" class="c">数量</th><th style="width:90px;" class="r">単価</th><th style="width:100px;" class="r">金額</th></tr>
+        </thead>
+        <tbody id="pItems"></tbody>
+      </table>
+      <div class="p-totals">
+        <div class="p-totals-inner">
+          <div class="p-totals-row"><span>小計</span><span id="pSubtotal">0 円</span></div>
+          <div class="p-totals-row"><span>消費税（10%）</span><span id="pTax">0 円</span></div>
+          <div class="p-totals-row grand"><span>合計</span><span id="pTotal">0 円</span></div>
+        </div>
+      </div>
+      <div class="p-footer">
+        <div class="p-footer-title">お振込先</div>
+        <div class="p-footer-body" id="pBank"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Input -->
+  <div class="input-panel">
+    <div class="panel-title">御請求書</div>
+
+    <div class="section-label">基本情報</div>
+    <div class="field-row">
+      <div class="field"><label>発行日</label><input type="text" id="fDate" value="2026年4月6日"></div>
+      <div class="field"><label>お支払期限</label><input type="text" id="fDue" value="2026年4月30日"></div>
+    </div>
+    <div class="field"><label>請求先</label><input type="text" id="fTo" value="" placeholder="株式会社Gaudiy"></div>
+
+    <div class="section-label">請求元</div>
+    <div class="field"><label>名前</label><input type="text" id="fName" value=""></div>
+    <div class="field"><label>郵便番号</label><input type="text" id="fZip" value=""></div>
+    <div class="field"><label>住所</label><textarea id="fAddr" rows="2"></textarea></div>
+    <div class="field"><label>電話番号</label><input type="text" id="fTel" value=""></div>
+    <div class="field"><label>会社名（任意）</label><input type="text" id="fCompany" value=""></div>
+
+    <div class="section-label">明細</div>
+    <div id="itemInputs"></div>
+    <div class="btn-row">
+      <button class="btn-small" onclick="addItem()">+ 行追加</button>
+      <button class="btn-small" onclick="removeItem()">- 行削除</button>
+    </div>
+
+    <div class="section-label">振込先</div>
+    <div class="field"><label>銀行名</label><input type="text" id="fBankName" value=""></div>
+    <div class="field"><label>支店名</label><input type="text" id="fBranch" value=""></div>
+    <div class="field-row">
+      <div class="field"><label>口座種別</label><input type="text" id="fAccType" value="普通"></div>
+      <div class="field"><label>口座番号</label><input type="text" id="fAccNum" value=""></div>
+    </div>
+    <div class="field"><label>口座名義</label><input type="text" id="fAccName" value=""></div>
+
+    <button class="btn-print" onclick="window.print()">PDF出力</button>
+  </div>
+</div>
+
+<script>
+var ITEM_COUNT = 7;
+var items = [];
+
+function init() {
+  var container = document.getElementById('itemInputs');
+  for (var i = 0; i < ITEM_COUNT; i++) {
+    addItemRow(container, i);
+  }
+  render();
+  document.querySelectorAll('.input-panel input, .input-panel textarea').forEach(function(el) {
+    el.addEventListener('input', render);
+  });
+}
+
+function addItemRow(container, idx) {
+  var div = document.createElement('div');
+  div.className = 'item-row';
+  div.innerHTML = '<span class="item-no">' + (idx + 1) + '</span>' +
+    '<input class="item-name" placeholder="品目" data-idx="' + idx + '" data-field="name">' +
+    '<input class="item-qty" placeholder="数量" data-idx="' + idx + '" data-field="qty">' +
+    '<input class="item-price" placeholder="単価" data-idx="' + idx + '" data-field="price">';
+  container.appendChild(div);
+  div.querySelectorAll('input').forEach(function(el) {
+    el.addEventListener('input', render);
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var inputs = Array.from(div.querySelectorAll('input'));
+        var i = inputs.indexOf(el);
+        if (i < inputs.length - 1) {
+          inputs[i + 1].focus();
+        } else {
+          var next = div.nextElementSibling;
+          if (next) {
+            var nextInput = next.querySelector('input');
+            if (nextInput) nextInput.focus();
+          }
+        }
+      }
+    });
+  });
+}
+
+function addItem() {
+  var container = document.getElementById('itemInputs');
+  var idx = container.children.length;
+  addItemRow(container, idx);
+  render();
+}
+
+function removeItem() {
+  var container = document.getElementById('itemInputs');
+  if (container.children.length > 1) {
+    container.removeChild(container.lastElementChild);
+    render();
+  }
+}
+
+function getItems() {
+  var rows = document.querySelectorAll('#itemInputs .item-row');
+  var result = [];
+  rows.forEach(function(row, i) {
+    var name = row.querySelector('[data-field="name"]').value;
+    var qty = parseFloat(row.querySelector('[data-field="qty"]').value) || 0;
+    var price = parseFloat(row.querySelector('[data-field="price"]').value.replace(/,/g, '')) || 0;
+    result.push({ name: name, qty: qty, price: price, amount: qty * price });
+  });
+  return result;
+}
+
+function render() {
+  // Meta
+  document.getElementById('pDate').textContent = document.getElementById('fDate').value;
+  document.getElementById('pDue').textContent = document.getElementById('fDue').value;
+  document.getElementById('pTo').textContent = document.getElementById('fTo').value || ' ';
+
+  // From
+  var fromParts = [];
+  var name = document.getElementById('fName').value;
+  var company = document.getElementById('fCompany').value;
+  if (name) fromParts.push('<strong style="font-size:12px;">' + name + '</strong>');
+  var zip = document.getElementById('fZip').value;
+  if (zip) fromParts.push(zip);
+  var addr = document.getElementById('fAddr').value;
+  if (addr) fromParts.push(addr.replace(/\n/g, '<br>'));
+  if (company) fromParts.push(company);
+  var tel = document.getElementById('fTel').value;
+  if (tel) fromParts.push('TEL: ' + tel);
+  document.getElementById('pFrom').innerHTML = fromParts.join('<br>');
+
+  // Items
+  var items = getItems();
+  var tbody = document.getElementById('pItems');
+  var totalRows = Math.max(items.length, 7);
+  var html = '';
+  var subtotal = 0;
+  for (var i = 0; i < totalRows; i++) {
+    var item = items[i] || { name: '', qty: 0, price: 0, amount: 0 };
+    subtotal += item.amount;
+    html += '<tr><td class="num">' + (i + 1) + '</td>' +
+      '<td>' + (item.name || '') + '</td>' +
+      '<td class="c">' + (item.qty || '') + '</td>' +
+      '<td class="r">' + (item.price ? item.price.toLocaleString() : '') + '</td>' +
+      '<td class="amount">' + (item.amount ? item.amount.toLocaleString() : '') + '</td></tr>';
+  }
+  tbody.innerHTML = html;
+
+  var tax = Math.floor(subtotal * 0.1);
+  var total = subtotal + tax;
+  document.getElementById('pSubtotal').textContent = subtotal.toLocaleString() + ' 円';
+  document.getElementById('pTax').textContent = tax.toLocaleString() + ' 円';
+  document.getElementById('pTotal').textContent = total.toLocaleString() + ' 円';
+  document.getElementById('pGrandTotal').textContent = total ? '\u00A5 ' + total.toLocaleString() : '-';
+
+  // Bank
+  var bankParts = [];
+  var bankName = document.getElementById('fBankName').value;
+  var branch = document.getElementById('fBranch').value;
+  var accType = document.getElementById('fAccType').value;
+  var accNum = document.getElementById('fAccNum').value;
+  var accName = document.getElementById('fAccName').value;
+  if (bankName || branch) bankParts.push((bankName || '') + ' ' + (branch ? branch + '支店' : ''));
+  if (accType || accNum) bankParts.push((accType || '') + ' ' + (accNum || ''));
+  if (accName) bankParts.push('口座名義: ' + accName);
+  document.getElementById('pBank').textContent = bankParts.join('\n');
+}
+
+init();
+</script>
+</body>
+</html>

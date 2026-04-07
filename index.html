@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deer Works</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #1a1a1a; color: #e8e8e8; min-height: 100vh; padding: 48px 20px; }
+  h1 { font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 8px; letter-spacing: 4px; }
+  .subtitle { font-size: 12px; color: #888; text-align: center; margin-bottom: 48px; }
+  .tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; max-width: 960px; margin: 0 auto; }
+  a.card { display: block; background: #252525; border-radius: 10px; padding: 24px; border: 1px solid #333; text-decoration: none; color: #e8e8e8; transition: border-color 0.2s, transform 0.1s; }
+  a.card:hover { border-color: #666; transform: translateY(-2px); }
+  .card-icon { font-size: 28px; margin-bottom: 12px; }
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .card-desc { font-size: 12px; color: #888; line-height: 1.6; }
+</style>
+</head>
+<body>
+<h1>DEER WORKS</h1>
+<div class="subtitle">Web Tools Collection</div>
+<div class="tools">
+  <a class="card" href="processor.html">
+    <div class="card-icon">🖼</div>
+    <div class="card-title">Image Processor</div>
+    <div class="card-desc">リサイズ＆クロップ + SAMPLE透かし。縦横自動判別、ドラッグで位置調整、一括処理。</div>
+  </a>
+  <a class="card" href="blur.html">
+    <div class="card-icon">🔍</div>
+    <div class="card-title">Blur Checker</div>
+    <div class="card-desc">ピンボケ・手ブレのある画像を自動判定。顔検出ベースの高精度判定。HEIC対応。</div>
+  </a>
+  <a class="card" href="heic.html">
+    <div class="card-icon">📷</div>
+    <div class="card-title">HEIC Converter</div>
+    <div class="card-desc">HEIC/HEIFファイルをJPGに一括変換。Display P3対応。</div>
+  </a>
+  <a class="card" href="watermark.html">
+    <div class="card-icon">💧</div>
+    <div class="card-title">Sample Watermark</div>
+    <div class="card-desc">画像にSAMPLE透かしを入れる。位置調整・透明度・フォント選択可。</div>
+  </a>
+  <a class="card" href="resizer.html">
+    <div class="card-icon">📐</div>
+    <div class="card-title">Image Resizer</div>
+    <div class="card-desc">画像を指定サイズに自動リサイズ＆中央クロップ。縦横自動判別。</div>
+  </a>
+  <a class="card" href="invoice.html">
+    <div class="card-icon">📄</div>
+    <div class="card-title">御請求書 テンプレート1</div>
+    <div class="card-desc">入力フォームから御請求書を作成。PDF出力対応。</div>
+  </a>
+  <a class="card" href="invoice2.html">
+    <div class="card-icon">📄</div>
+    <div class="card-title">ご請求書 テンプレート2</div>
+    <div class="card-desc">源泉徴収対応。摘要・備考欄付き。PDF出力対応。</div>
+  </a>
+</div>
+</body>
+</html>

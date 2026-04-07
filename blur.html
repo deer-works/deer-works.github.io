@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ピンボケ・手ブレ判定</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: #1a1a1a; color: #e8e8e8; min-height: 100vh; padding: 32px 20px; }
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: 2px; text-align: center; }
+  .subtitle { font-size: 12px; color: #888; margin-bottom: 24px; text-align: center; }
+
+  .controls { display: flex; gap: 16px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .controls label { font-size: 12px; color: #aaa; display: flex; align-items: center; gap: 6px; }
+  .controls input[type="range"] { width: 120px; }
+  .controls .val { font-size: 11px; color: #666; width: 28px; }
+
+  .drop-zone { width: 100%; max-width: 900px; min-height: 140px; border: 2px dashed #444; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 0.2s; margin: 0 auto 24px; }
+  .drop-zone:hover, .drop-zone.dragover { border-color: #888; }
+  .drop-zone-text { font-size: 14px; color: #666; text-align: center; padding: 32px; }
+  input[type="file"] { display: none; }
+
+  .actions { display: flex; gap: 12px; justify-content: center; margin-bottom: 16px; }
+  .btn { padding: 10px 28px; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: #fff; color: #222; }
+  .btn-primary:hover { background: #ddd; }
+  .btn-secondary { background: #333; color: #fff; border: 1px solid #555; }
+  .btn-secondary:hover { background: #444; }
+  .btn:disabled { opacity: 0.3; cursor: default; }
+
+  .progress-bar { width: 100%; max-width: 600px; height: 6px; background: #333; border-radius: 3px; margin: 0 auto 20px; overflow: hidden; display: none; }
+  .progress-fill { height: 100%; background: #7fe08c; width: 0%; transition: width 0.1s; }
+
+  .summary { text-align: center; margin-bottom: 20px; font-size: 13px; }
+  .summary .ok-count { color: #7fe08c; font-weight: 700; }
+  .summary .ng-count { color: #e07f7f; font-weight: 700; }
+
+  .filter-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+  .filter-tab { padding: 6px 16px; border: 1px solid #444; border-radius: 4px; background: #252525; color: #aaa; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .filter-tab.active { background: #444; color: #fff; border-color: #666; }
+
+  .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; max-width: 1200px; margin: 0 auto; }
+  .image-card { background: #252525; border-radius: 8px; overflow: hidden; border: 2px solid #333; position: relative; }
+  .image-card.ng { border-color: #e07f7f; }
+  .image-card.ok { border-color: #333; }
+  .image-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .image-card-info { padding: 6px 10px; }
+  .image-card-name { font-size: 10px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
+  .image-card-score { font-size: 11px; display: flex; justify-content: space-between; align-items: center; }
+  .score-bar { flex: 1; height: 4px; background: #333; border-radius: 2px; margin: 0 8px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 2px; }
+  .score-fill.high { background: #7fe08c; }
+  .score-fill.mid { background: #e0c97f; }
+  .score-fill.low { background: #e07f7f; }
+  .badge-ok { color: #7fe08c; font-weight: 700; font-size: 10px; }
+  .badge-ng { color: #e07f7f; font-weight: 700; font-size: 10px; }
+  .badge-ng-tag { position: absolute; top: 8px; right: 8px; background: rgba(224,80,80,0.9); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<h1>BLUR CHECKER</h1>
+<div class="subtitle">ピンボケ・手ブレのある画像を自動判定</div>
+
+<div class="controls">
+  <label>判定しきい値 <input type="range" id="threshold" min="5" max="80" value="30"> <span class="val" id="thresholdVal">30</span></label>
+  <span style="font-size:11px; color:#555;">← 低いと厳しく / 高いと甘く</span>
+</div>
+
+<div class="drop-zone" id="dropZone">
+  <div class="drop-zone-text">
+    クリックまたはドラッグ＆ドロップで画像をアップロード<br>
+    <span style="font-size:11px; color:#555;">100枚以上OK・ブラウザ内で処理（アップロードなし）</span>
+  </div>
+</div>
+<input type="file" id="fileInput" accept="image/*,.heic,.heif" multiple>
+<script src="https://unpkg.com/libheif-js@1.18.2/libheif-wasm/libheif-bundle.js"></script>
+
+<div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="actions">
+  <button class="btn btn-secondary" id="btnClear" disabled>全てクリア</button>
+</div>
+
+<div class="summary" id="summary"></div>
+
+<div class="filter-tabs" id="filterTabs" style="display:none;">
+  <button class="filter-tab active" data-filter="all">すべて</button>
+  <button class="filter-tab" data-filter="ng">NG のみ</button>
+  <button class="filter-tab" data-filter="ok">OK のみ</button>
+</div>
+
+<div class="image-grid" id="imageGrid"></div>
+
+<script>
+var entries = [];
+var currentFilter = 'all';
+var dropZone = document.getElementById('dropZone');
+var fileInput = document.getElementById('fileInput');
+var grid = document.getElementById('imageGrid');
+
+dropZone.addEventListener('click', function() { fileInput.click(); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', function() { addFiles(fileInput.files); fileInput.value = ''; });
+
+document.getElementById('threshold').addEventListener('input', function() {
+  document.getElementById('thresholdVal').textContent = this.value;
+  renderGrid();
+});
+
+document.getElementById('btnClear').addEventListener('click', function() {
+  entries = [];
+  renderGrid();
+  document.getElementById('summary').textContent = '';
+  document.getElementById('filterTabs').style.display = 'none';
+  document.getElementById('progressBar').style.display = 'none';
+});
+
+document.getElementById('filterTabs').addEventListener('click', function(e) {
+  if (!e.target.classList.contains('filter-tab')) return;
+  document.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.remove('active'); });
+  e.target.classList.add('active');
+  currentFilter = e.target.dataset.filter;
+  renderGrid();
+});
+
+// libheif decoder init
+var heifDecoder = null;
+(function initLibheif() {
+  if (typeof libheif === 'undefined') { setTimeout(initLibheif, 300); return; }
+  var mod = typeof libheif === 'function' ? libheif() : libheif;
+  function tryInit(retries) {
+    if (mod.HeifDecoder) {
+      heifDecoder = new mod.HeifDecoder();
+    } else if (mod.then) {
+      mod.then(function(r) { mod = r; tryInit(0); });
+    } else if (retries > 0) {
+      setTimeout(function() { tryInit(retries - 1); }, 300);
+    }
+  }
+  if (mod && mod.then) { mod.then(function(r) { mod = r; tryInit(20); }); }
+  else { tryInit(20); }
+})();
+
+function isHeic(file) {
+  var n = file.name.toLowerCase();
+  return n.endsWith('.heic') || n.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
+}
+
+function isAcceptable(file) {
+  return file.type.startsWith('image/') || isHeic(file) || file.name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|bmp|heic|heif)$/);
+}
+
+function convertHeicToImageElement(file) {
+  return new Promise(function(resolve, reject) {
+    if (!heifDecoder) { reject('decoder not ready'); return; }
+    file.arrayBuffer().then(function(buffer) {
+      try {
+        var data = heifDecoder.decode(new Uint8Array(buffer));
+        if (!data || !data.length) throw new Error('no image data');
+        var image = data[0];
+        var w = image.get_width();
+        var h = image.get_height();
+        var c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        var cx = c.getContext('2d');
+        var imgData = cx.createImageData(w, h);
+        image.display(imgData, function(d) {
+          cx.putImageData(d || imgData, 0, 0);
+          var img = new Image();
+          img.onload = function() { resolve(img); };
+          img.src = c.toDataURL('image/jpeg', 0.95);
+        });
+      } catch(e) { reject(e); }
+    }).catch(reject);
+  });
+}
+
+function addFiles(files) {
+  var arr = Array.from(files).filter(isAcceptable);
+  if (!arr.length) return;
+
+  var heicFiles = arr.filter(isHeic);
+  var normalFiles = arr.filter(function(f) { return !isHeic(f); });
+
+  if (heicFiles.length === 0) {
+    processFiles(normalFiles);
+    return;
+  }
+
+  document.getElementById('summary').innerHTML = '<span style="color:#e0c97f;">HEIC変換中... ' + heicFiles.length + '枚</span>';
+
+  // Wait for decoder
+  function waitForDecoder(cb, retries) {
+    if (heifDecoder) { cb(); return; }
+    if (retries <= 0) {
+      document.getElementById('summary').innerHTML = '<span style="color:#e07f7f;">HEICデコーダの読み込みに失敗しました</span>';
+      if (normalFiles.length) processFiles(normalFiles);
+      return;
+    }
+    setTimeout(function() { waitForDecoder(cb, retries - 1); }, 500);
+  }
+
+  waitForDecoder(function() {
+    var convertedImages = [];
+    var done = 0;
+
+    function convertNext() {
+      if (done >= heicFiles.length) {
+        // All HEIC converted, now process everything
+        processFilesWithImages(normalFiles, convertedImages);
+        return;
+      }
+      var f = heicFiles[done];
+      convertHeicToImageElement(f).then(function(img) {
+        convertedImages.push({ file: f, img: img });
+        done++;
+        document.getElementById('summary').innerHTML = '<span style="color:#e0c97f;">HEIC変換中... ' + done + ' / ' + heicFiles.length + '</span>';
+        setTimeout(convertNext, 10);
+      }).catch(function() {
+        done++;
+        setTimeout(convertNext, 10);
+      });
+    }
+    convertNext();
+  }, 20);
+}
+
+function processFiles(arr) {
+
+  var bar = document.getElementById('progressBar');
+  var fill = document.getElementById('progressFill');
+  bar.style.display = 'block';
+  fill.style.width = '0%';
+
+  var total = arr.length;
+  var done = 0;
+
+  function processNext() {
+    if (done >= total) {
+      // Sort: NG first, then by score ascending
+      entries.sort(function(a, b) { return a.score - b.score; });
+      bar.style.display = 'none';
+      renderGrid();
+      updateSummary();
+      document.getElementById('filterTabs').style.display = 'flex';
+      return;
+    }
+
+    var file = arr[done];
+    var img = new Image();
+    img.onload = function() {
+      calcSharpness(img).then(function(score) {
+        var thumbUrl = makeThumbnail(img);
+        entries.push({ file: file, thumbUrl: thumbUrl, score: score });
+        done++;
+        fill.style.width = (done / total * 100) + '%';
+        setTimeout(processNext, 0);
+      });
+    };
+    img.onerror = function() {
+      done++;
+      fill.style.width = (done / total * 100) + '%';
+      setTimeout(processNext, 0);
+    };
+    img.src = URL.createObjectURL(file);
+  }
+
+  processNext();
+}
+
+function processFilesWithImages(normalFiles, heicImages) {
+  // Process normal files first, then already-decoded HEIC images
+  var bar = document.getElementById('progressBar');
+  var fill = document.getElementById('progressFill');
+  var total = normalFiles.length + heicImages.length;
+  bar.style.display = 'block';
+  fill.style.width = '0%';
+  var done = 0;
+
+  function finish() {
+    entries.sort(function(a, b) { return a.score - b.score; });
+    bar.style.display = 'none';
+    renderGrid();
+    updateSummary();
+    document.getElementById('filterTabs').style.display = 'flex';
+  }
+
+  function processHeicImages() {
+    if (!heicImages.length) { finish(); return; }
+    var idx = 0;
+    function next() {
+      if (idx >= heicImages.length) { finish(); return; }
+      var item = heicImages[idx];
+      calcSharpness(item.img).then(function(score) {
+        var thumbUrl = makeThumbnail(item.img);
+        entries.push({ file: item.file, thumbUrl: thumbUrl, score: score });
+        done++; idx++;
+        fill.style.width = (done / total * 100) + '%';
+        setTimeout(next, 0);
+      });
+    }
+    next();
+  }
+
+  if (!normalFiles.length) { processHeicImages(); return; }
+
+  var nIdx = 0;
+  function processNormalNext() {
+    if (nIdx >= normalFiles.length) { processHeicImages(); return; }
+    var file = normalFiles[nIdx];
+    var img = new Image();
+    img.onload = function() {
+      calcSharpness(img).then(function(score) {
+        var thumbUrl = makeThumbnail(img);
+        entries.push({ file: file, thumbUrl: thumbUrl, score: score });
+        done++; nIdx++;
+        fill.style.width = (done / total * 100) + '%';
+        setTimeout(processNormalNext, 0);
+      });
+    };
+    img.onerror = function() { done++; nIdx++; fill.style.width = (done / total * 100) + '%'; setTimeout(processNormalNext, 0); };
+    img.src = URL.createObjectURL(file);
+  }
+  processNormalNext();
+}
+
+// face-api.js face detection
+var faceApiReady = false;
+var faceApiScript = document.createElement('script');
+faceApiScript.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+faceApiScript.onload = function() {
+  // Load tiny face detector model from same origin
+  var modelUrl = window.location.href.replace(/[^/]*$/, '') + 'models';
+  // If local file, use CDN
+  if (modelUrl.startsWith('file:')) {
+    modelUrl = 'https://chickentakano.github.io/tools/models';
+  }
+  faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl).then(function() {
+    faceApiReady = true;
+  }).catch(function(e) {
+    console.warn('face-api model load failed, using block analysis fallback', e);
+  });
+};
+document.head.appendChild(faceApiScript);
+
+function calcSharpness(img) {
+  return new Promise(function(resolve) {
+    var maxDim = 1024;
+    var sc = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1);
+    var w = Math.floor(img.naturalWidth * sc);
+    var h = Math.floor(img.naturalHeight * sc);
+
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    var ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+
+    var imageData = ctx.getImageData(0, 0, w, h);
+    var data = imageData.data;
+
+    // Grayscale
+    var gray = new Float32Array(w * h);
+    for (var i = 0; i < w * h; i++) {
+      var idx = i * 4;
+      gray[i] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+    }
+
+    // Laplacian (8-neighbor)
+    var lap = new Float32Array(w * h);
+    for (var y = 1; y < h - 1; y++) {
+      for (var x = 1; x < w - 1; x++) {
+        lap[y * w + x] = -8 * gray[y * w + x]
+          + gray[(y-1)*w+(x-1)] + gray[(y-1)*w+x] + gray[(y-1)*w+(x+1)]
+          + gray[y*w+(x-1)] + gray[y*w+(x+1)]
+          + gray[(y+1)*w+(x-1)] + gray[(y+1)*w+x] + gray[(y+1)*w+(x+1)];
+      }
+    }
+
+    function regionScore(rx, ry, rw, rh) {
+      var s = 0, n = 0;
+      var x1 = Math.max(1, Math.floor(rx)), y1 = Math.max(1, Math.floor(ry));
+      var x2 = Math.min(w-2, Math.floor(rx+rw)), y2 = Math.min(h-2, Math.floor(ry+rh));
+      for (var y = y1; y < y2; y++) for (var x = x1; x < x2; x++) { var v = lap[y*w+x]; s += v*v; n++; }
+      return n > 0 ? Math.min(100, Math.sqrt(s/n) * 0.3) : 0;
+    }
+
+    var allScore = regionScore(1, 1, w-2, h-2);
+
+    // Strategy 1: face-api.js face detection
+    if (faceApiReady) {
+      faceapi.detectAllFaces(c, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 }))
+        .then(function(faces) {
+          if (faces.length > 0) {
+            var faceScores = faces.map(function(f) {
+              var b = f.box;
+              var pad = Math.max(b.width, b.height) * 0.3;
+              return regionScore(b.x - pad, b.y - pad, b.width + pad*2, b.height + pad*2);
+            });
+            var worstFace = Math.min.apply(null, faceScores);
+            resolve(Math.min(worstFace, allScore));
+          } else {
+            resolve(blockAnalysis(w, h, lap, allScore));
+          }
+        }).catch(function() {
+          resolve(blockAnalysis(w, h, lap, allScore));
+        });
+    } else {
+      resolve(blockAnalysis(w, h, lap, allScore));
+    }
+
+    // Strategy 2: 9-block analysis fallback
+    function blockAnalysis(w, h, lap, allScore) {
+      var bw = Math.floor(w / 3), bh = Math.floor(h / 3);
+      var scores = [];
+      for (var by = 0; by < 3; by++) {
+        for (var bx = 0; bx < 3; bx++) {
+          scores.push(regionScore(bx * bw, by * bh, bw, bh));
+        }
+      }
+      // Sort scores
+      scores.sort(function(a, b) { return a - b; });
+      var minBlock = scores[0];
+      var maxBlock = scores[scores.length - 1];
+
+      // If big gap between sharpest and blurriest block,
+      // subject might be in a blurry area
+      // Use average of bottom 4 blocks (likely subject area if blurred)
+      var bottomAvg = (scores[0] + scores[1] + scores[2] + scores[3]) / 4;
+
+      // Weight: if variance between blocks is high, trust the low blocks more
+      var blockVariance = maxBlock - minBlock;
+      if (blockVariance > 20) {
+        // High contrast between blocks = likely subject blur
+        return Math.min(bottomAvg, allScore);
+      }
+      // Low variance = uniform blur or uniform sharpness
+      return allScore;
+    }
+  });
+}
+
+function makeThumbnail(img) {
+  var c = document.createElement('canvas');
+  var size = 300;
+  c.width = size; c.height = size;
+  var cx = c.getContext('2d');
+  var iw = img.naturalWidth, ih = img.naturalHeight;
+  var scale = Math.max(size / iw, size / ih);
+  var sw = size / scale, sh = size / scale;
+  var sx = (iw - sw) / 2, sy = (ih - sh) / 2;
+  cx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
+  return c.toDataURL('image/jpeg', 0.7);
+}
+
+function getThreshold() {
+  return parseInt(document.getElementById('threshold').value);
+}
+
+function updateSummary() {
+  var threshold = getThreshold();
+  var okCount = entries.filter(function(e) { return e.score >= threshold; }).length;
+  var ngCount = entries.length - okCount;
+  document.getElementById('summary').innerHTML =
+    entries.length + '枚中　<span class="ok-count">OK: ' + okCount + '枚</span>　<span class="ng-count">NG: ' + ngCount + '枚</span>';
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  document.getElementById('btnClear').disabled = entries.length === 0;
+  var threshold = getThreshold();
+  updateSummary();
+
+  entries.forEach(function(entry) {
+    var isNg = entry.score < threshold;
+    if (currentFilter === 'ng' && !isNg) return;
+    if (currentFilter === 'ok' && isNg) return;
+
+    var card = document.createElement('div');
+    card.className = 'image-card ' + (isNg ? 'ng' : 'ok');
+
+    var img = document.createElement('img');
+    img.src = entry.thumbUrl;
+    card.appendChild(img);
+
+    if (isNg) {
+      var tag = document.createElement('div');
+      tag.className = 'badge-ng-tag';
+      tag.textContent = 'NG';
+      card.appendChild(tag);
+    }
+
+    var info = document.createElement('div');
+    info.className = 'image-card-info';
+
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'image-card-name';
+    nameDiv.textContent = entry.file.name;
+
+    var scoreDiv = document.createElement('div');
+    scoreDiv.className = 'image-card-score';
+    var scoreLabel = document.createElement('span');
+    scoreLabel.className = isNg ? 'badge-ng' : 'badge-ok';
+    scoreLabel.textContent = Math.round(entry.score);
+
+    var barDiv = document.createElement('div');
+    barDiv.className = 'score-bar';
+    var fillDiv = document.createElement('div');
+    fillDiv.className = 'score-fill ' + (entry.score >= threshold ? 'high' : entry.score >= threshold * 0.6 ? 'mid' : 'low');
+    fillDiv.style.width = Math.min(100, entry.score) + '%';
+    barDiv.appendChild(fillDiv);
+
+    var badge = document.createElement('span');
+    badge.className = isNg ? 'badge-ng' : 'badge-ok';
+    badge.textContent = isNg ? 'NG' : 'OK';
+
+    scoreDiv.appendChild(scoreLabel);
+    scoreDiv.appendChild(barDiv);
+    scoreDiv.appendChild(badge);
+
+    info.appendChild(nameDiv);
+    info.appendChild(scoreDiv);
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
