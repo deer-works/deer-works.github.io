@@ -81,6 +81,7 @@
 </div>
 <input type="file" id="fileInput" accept="image/*,.heic,.heif" multiple>
 <script src="https://unpkg.com/libheif-js@1.18.2/libheif-wasm/libheif-bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
 <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
@@ -129,14 +130,27 @@ document.getElementById('btnClear').addEventListener('click', function() {
 });
 
 document.getElementById('btnDownload').addEventListener('click', function() {
-  var threshold = getThreshold();
-  entries.forEach(function(e) {
-    if (!e.excluded && e.file) {
-      var a = document.createElement('a');
-      a.href = e.thumbFullUrl || URL.createObjectURL(e.file);
-      a.download = e.file.name;
-      a.click();
-    }
+  var targets = entries.filter(function(e) { return !e.excluded && e.file; });
+  if (!targets.length) return;
+
+  var btn = document.getElementById('btnDownload');
+  btn.disabled = true;
+  btn.textContent = 'ZIP作成中...';
+
+  var zip = new JSZip();
+  var loaded = 0;
+
+  targets.forEach(function(e) {
+    zip.file(e.file.name, e.file);
+  });
+
+  zip.generateAsync({ type: 'blob' }).then(function(blob) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'selected_images.zip';
+    a.click();
+    btn.disabled = false;
+    btn.textContent = '一括ダウンロード';
   });
 });
 
