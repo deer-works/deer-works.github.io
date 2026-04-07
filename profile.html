@@ -87,7 +87,7 @@
   .photo-slot-empty-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #bbb; font-size: 11px; font-family: sans-serif; text-align: center; pointer-events: none; }
   .slot-label { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.6); color: #fff; font-size: 9px; padding: 2px 8px; border-radius: 10px; font-family: sans-serif; pointer-events: none; z-index: 2; }
 
-  .p-bottom { display: flex; gap: 16px; margin-top: 14px; align-items: flex-end; }
+  .p-bottom { display: flex; gap: 16px; align-items: flex-end; position: absolute; bottom: 12mm; left: 16mm; right: 16mm; }
   .p-bottom-contact { flex: 1; }
   .p-bottom-photo { width: 300px; flex-shrink: 0; }
 
@@ -159,7 +159,7 @@
 <script>
 var photoSlots = [
   { id:'main', num:1, label:'メイン写真（右上）', src:null, scale:1, ox:0, oy:0, h:400 },
-  { id:'sub', num:2, label:'サブ写真（右下）', src:null, scale:1, ox:0, oy:0, h:300 }
+  { id:'sub', num:2, label:'サブ写真（右下）', src:null, scale:1, ox:0, oy:0, h:400 }
 ];
 var snsEntries = [], customEntries = [];
 
