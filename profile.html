@@ -11,7 +11,7 @@
     .input-panel { display: none !important; }
     .layout { display: block !important; }
     .preview-wrap { display: block !important; width: auto !important; padding: 0 !important; margin: 0 !important; background: #fff !important; overflow: visible !important; }
-    .page { box-shadow: none !important; margin: 0 !important; }
+    .page { box-shadow: none !important; margin: 0 !important; height: 297mm !important; min-height: 0 !important; overflow: hidden !important; }
     .slot-label { display: none !important; }
     .photo-slot-empty-text { display: none !important; }
     .page-break { page-break-before: always; }
@@ -56,7 +56,7 @@
   .photo-upload-controls input[type="range"] { width: 80px; }
 
   /* Page */
-  .page { width: 210mm; min-height: 297mm; background: #fff; padding: 14mm 16mm; flex-shrink: 0; position: relative; font-size: 13px; }
+  .page { width: 210mm; height: 297mm; background: #fff; padding: 14mm 16mm; flex-shrink: 0; position: relative; font-size: 13px; overflow: hidden; }
   .p-top { display: flex; gap: 20px; margin-bottom: 20px; }
   .p-top-left { flex: 1; }
   .p-top-right { width: 300px; flex-shrink: 0; }
